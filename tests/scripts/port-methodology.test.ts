@@ -26,10 +26,10 @@ describe("transformWikilinks", () => {
     expect(output).toBe("Based on 2026-04-15-danilo-brain-dump.");
   });
 
-  it("converts concepts wikilinks to GitHub URLs", () => {
+  it("converts wiki/concepts wikilinks to relative paths", () => {
     const input = "See [[wiki/concepts/harness-engineering|harness]].";
     const output = transformWikilinks(input);
-    expect(output).toContain("[harness](https://github.com/danilods/matilha-skills/tree/main/concepts)");
+    expect(output).toBe("See [harness](../concepts/harness-engineering.md).");
   });
 
   it("converts wiki/methodology wikilinks to relative paths (full form)", () => {
@@ -60,5 +60,29 @@ describe("transformWikilinks", () => {
     const input = "Use `[[wikilink]]` syntax.";
     const output = transformWikilinks(input);
     expect(output).toBe("Use `[[wikilink]]` syntax.");
+  });
+
+  it("converts wiki/sources wikilinks to concepts relative path", () => {
+    const input = "Based on [[wiki/sources/building-effective-agents-anthropic|Anthropic's guide]].";
+    const output = transformWikilinks(input);
+    expect(output).toBe("Based on [Anthropic's guide](../concepts/building-effective-agents-anthropic.md).");
+  });
+
+  it("converts bare non-methodology wikilink to concepts relative path", () => {
+    const input = "See [[harness-engineering]] for details.";
+    const output = transformWikilinks(input);
+    expect(output).toBe("See [harness-engineering](../concepts/harness-engineering.md) for details.");
+  });
+
+  it("preserves bare methodology wikilinks by whitelist (index)", () => {
+    const input = "Back to [[index]].";
+    const output = transformWikilinks(input);
+    expect(output).toBe("Back to [index](./index.md).");
+  });
+
+  it("preserves bare methodology wikilinks by whitelist (materializacoes)", () => {
+    const input = "See [[materializacoes]].";
+    const output = transformWikilinks(input);
+    expect(output).toBe("See [materializacoes](./materializacoes.md).");
   });
 });

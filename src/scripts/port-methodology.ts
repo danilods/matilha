@@ -6,7 +6,19 @@
  *   node dist/scripts/port-methodology.js <vault-page> <output-file>
  */
 
-const CONCEPTS_GITHUB_BASE = "https://github.com/danilods/matilha-skills/tree/main/concepts";
+const METHODOLOGY_SLUGS = new Set([
+  "index",
+  "principios-transversais",
+  "materializacoes",
+  "00-mapeamento-problema",
+  "10-prd",
+  "20-stack",
+  "30-skills-agents",
+  "40-execucao",
+  "50-qualidade-testes",
+  "60-deploy-infra",
+  "70-onboarding-time"
+]);
 
 function transformLine(line: string): string {
   // Obsidian highlight syntax → bold (not in code)
@@ -24,9 +36,16 @@ function transformLine(line: string): string {
         return label ?? fileName;
       }
 
-      // wiki/concepts/* → GitHub URL (concepts likely won't be in methodology/)
+      // wiki/concepts/* → relative ../concepts/<slug>.md
       if (target.startsWith("wiki/concepts/")) {
-        return `[${labelOrTarget}](${CONCEPTS_GITHUB_BASE})`;
+        const slug = target.slice("wiki/concepts/".length);
+        return `[${labelOrTarget}](../concepts/${slug}.md)`;
+      }
+
+      // wiki/sources/* → relative ../concepts/<slug>.md (sources collapse to concepts at destination)
+      if (target.startsWith("wiki/sources/")) {
+        const slug = target.slice("wiki/sources/".length);
+        return `[${labelOrTarget}](../concepts/${slug}.md)`;
       }
 
       // wiki/methodology/foo → relative ./foo.md
@@ -35,10 +54,13 @@ function transformLine(line: string): string {
         return `[${labelOrTarget}](./${slug}.md)`;
       }
 
-      // Bare methodology slug (e.g. 10-prd, 00-mapeamento-problema)
-      // Heuristic: 2-digit prefix or contains hyphen and no slash
+      // Bare wikilink (no slash): check whitelist for methodology slugs
       if (!target.includes("/")) {
-        return `[${labelOrTarget}](./${target}.md)`;
+        if (METHODOLOGY_SLUGS.has(target)) {
+          return `[${labelOrTarget}](./${target}.md)`;
+        }
+        // Non-methodology bare slug → concept by convention
+        return `[${labelOrTarget}](../concepts/${target}.md)`;
       }
 
       // Fallback: keep label, drop link
