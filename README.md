@@ -15,6 +15,15 @@ Agentic methodology plugin + CLI for Claude Code, Cursor, Codex, and Gemini CLI.
 - Registry client (`list` + `pull` from `github.com/danilods/matilha-skills`)
 - Vitest test suite (47 tests)
 
+## What's in Wave 2a (partial)
+
+- Registry repo: [github.com/danilods/matilha-skills](https://github.com/danilods/matilha-skills)
+- 10 skills following 12-section blueprint
+- 11 methodology pages (ported from Obsidian vault)
+- 9 slash commands (scout, plan, hunt, gather, howl, review, den, pack, matilha-design)
+- `matilha list` now returns real skills from registry
+- `matilha pull <slug>` fetches actual skill markdown
+
 ## Try the CLI locally
 
 ```
