@@ -1,0 +1,46 @@
+{
+  "name": "matilha",
+  "version": "0.1.0",
+  "description": "Agentic methodology plugin + CLI. Humans lead, agents hunt.",
+  "keywords": ["methodology", "agentic", "ai", "claude-code", "cursor", "codex", "gemini-cli", "design"],
+  "homepage": "https://github.com/danilodesousa/matilha",
+  "bugs": "https://github.com/danilodesousa/matilha/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/danilodesousa/matilha.git"
+  },
+  "author": "Danilo de Sousa",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "matilha": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit && vitest run"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsup": "^8.2.4",
+    "typescript": "^5.5.4",
+    "vitest": "^1.6.0"
+  }
+}
