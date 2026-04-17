@@ -1,0 +1,19 @@
+{
+  "name": "matilha",
+  "version": "0.1.0",
+  "description": "Agentic methodology plugin. Humans lead, agents hunt.",
+  "author": {
+    "name": "Danilo de Sousa",
+    "url": "https://github.com/danilodesousa"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/danilodesousa/matilha",
+  "keywords": ["methodology", "agentic", "design", "quality", "cross-tool"],
+  "commands": [],
+  "skills": [],
+  "agents": [],
+  "hooks": null,
+  "requires": {
+    "claude-code": ">=1.0.0"
+  }
+}
