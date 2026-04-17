@@ -2,7 +2,16 @@
   "name": "matilha",
   "version": "0.1.0",
   "description": "Agentic methodology plugin + CLI. Humans lead, agents hunt.",
-  "keywords": ["methodology", "agentic", "ai", "claude-code", "cursor", "codex", "gemini-cli", "design"],
+  "keywords": [
+    "methodology",
+    "agentic",
+    "ai",
+    "claude-code",
+    "cursor",
+    "codex",
+    "gemini-cli",
+    "design"
+  ],
   "homepage": "https://github.com/danilodesousa/matilha",
   "bugs": "https://github.com/danilodesousa/matilha/issues",
   "repository": {
@@ -38,6 +47,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@iarna/toml": "^2.2.5",
     "@types/node": "^20.14.0",
     "tsup": "^8.2.4",
     "typescript": "^5.5.4",
