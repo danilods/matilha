@@ -57,3 +57,53 @@ describe("RegistryClient.list", () => {
     await expect(client.list()).rejects.toThrow();
   });
 });
+
+describe("RegistryClient.pull", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("fetches skill markdown by slug", async () => {
+    const mockIndex = {
+      "matilha-scout": {
+        slug: "matilha-scout",
+        name: "Scout",
+        skillPath: "skills/matilha-scout/SKILL.md"
+      }
+    };
+    const mockMarkdown = "---\nname: matilha-scout\n---\n# Content";
+
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockIndex
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: async () => mockMarkdown
+      } as Response);
+
+    const client = new RegistryClient();
+    const content = await client.pull("matilha-scout");
+
+    expect(content).toBe(mockMarkdown);
+  });
+
+  it("throws on unknown slug", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({})
+    } as Response);
+
+    const client = new RegistryClient();
+    await expect(client.pull("unknown-slug")).rejects.toThrow(/not found/i);
+  });
+
+  it("rejects malformed slug", async () => {
+    const client = new RegistryClient();
+    await expect(client.pull("Invalid Slug!")).rejects.toThrow(/Invalid slug/i);
+  });
+});
