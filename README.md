@@ -4,21 +4,38 @@
 
 Agentic methodology plugin + CLI for Claude Code, Cursor, Codex, and Gemini CLI.
 
-**Status:** v0.1 — Wave 1 (CLI skeleton). Under active development, not ready for general use.
+**Status:** v0.1 — Wave 1 complete (CLI skeleton). Not yet published to marketplaces. Under active development.
 
-## Install (future)
+## What's in Wave 1
+
+- TypeScript CLI with Commander
+- 4 Zod schemas (projectStatus, spec, plan, wave)
+- 5 cross-tool renderers (universal, Claude Code, Cursor, Codex, Gemini CLI)
+- 4 plugin manifests (`.claude-plugin/`, `.cursor-plugin/`, `.codex/`, `gemini-extension.json`)
+- Registry client (`list` + `pull` from `github.com/danilodesousa/matilha-skills`)
+- Vitest test suite (47 tests)
+
+## Try the CLI locally
 
 ```
-npx matilha init
-```
-
-## Local development
-
-```
+git clone https://github.com/danilodesousa/matilha.git
+cd matilha
 npm install
 npm run build
-npm test
+node dist/cli.js --help
 ```
+
+## Roadmap
+
+See `docs/superpowers/specs/2026-04-17-matilha-v1-design.md` in the Memory vault for the full v1 design (7 waves).
+
+- Wave 1: CLI skeleton — done
+- Wave 2: Core skills + commands + registry bundled
+- Wave 3: Quality harness (review agents)
+- Wave 4: Design harness + companions
+- Wave 5: Wave execution (hunt + gather)
+- Wave 6: Polish + npm publish + marketplace submission
+- Wave 7: Cross-tool publishing + validation
 
 ## License
 
