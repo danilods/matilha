@@ -12,13 +12,13 @@ Agentic methodology plugin + CLI for Claude Code, Cursor, Codex, and Gemini CLI.
 - 4 Zod schemas (projectStatus, spec, plan, wave)
 - 5 cross-tool renderers (universal, Claude Code, Cursor, Codex, Gemini CLI)
 - 4 plugin manifests (`.claude-plugin/`, `.cursor-plugin/`, `.codex/`, `gemini-extension.json`)
-- Registry client (`list` + `pull` from `github.com/danilodesousa/matilha-skills`)
+- Registry client (`list` + `pull` from `github.com/danilods/matilha-skills`)
 - Vitest test suite (47 tests)
 
 ## Try the CLI locally
 
 ```
-git clone https://github.com/danilodesousa/matilha.git
+git clone https://github.com/danilods/matilha.git
 cd matilha
 npm install
 npm run build

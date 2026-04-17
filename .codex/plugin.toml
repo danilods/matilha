@@ -3,7 +3,7 @@ version = "0.1.0"
 description = "Agentic methodology plugin. Humans lead, agents hunt."
 author = "Danilo de Sousa"
 license = "MIT"
-homepage = "https://github.com/danilodesousa/matilha"
+homepage = "https://github.com/danilods/matilha"
 
 [dependencies]
 # populated in Wave 2+

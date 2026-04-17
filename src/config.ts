@@ -3,7 +3,7 @@ export const MANAGED_BLOCK_END = "<!-- MATILHA_MANAGED_END -->";
 
 export const SCHEMA_VERSION = 1;
 
-export const REGISTRY_REPO = "danilodesousa/matilha-skills";
+export const REGISTRY_REPO = "danilods/matilha-skills";
 export const REGISTRY_INDEX_URL = `https://raw.githubusercontent.com/${REGISTRY_REPO}/main/index.json`;
 export const REGISTRY_RAW_BASE = `https://raw.githubusercontent.com/${REGISTRY_REPO}/main`;
 

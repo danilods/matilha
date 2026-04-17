@@ -12,11 +12,11 @@
     "gemini-cli",
     "design"
   ],
-  "homepage": "https://github.com/danilodesousa/matilha",
-  "bugs": "https://github.com/danilodesousa/matilha/issues",
+  "homepage": "https://github.com/danilods/matilha",
+  "bugs": "https://github.com/danilods/matilha/issues",
   "repository": {
     "type": "git",
-    "url": "https://github.com/danilodesousa/matilha.git"
+    "url": "https://github.com/danilods/matilha.git"
   },
   "author": "Danilo de Sousa",
   "license": "MIT",
