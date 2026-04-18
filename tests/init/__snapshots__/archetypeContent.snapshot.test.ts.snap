@@ -1,0 +1,210 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`buildAgentsIndex snapshots > matches snapshot for cli 1`] = `
+"### Project structure
+
+- Entry: \`src/cli.ts\` — command parsing
+- Commands: \`src/commands/<name>.ts\`
+- Core logic: \`src/core/\`
+- Utils: \`src/utils/\`
+
+### Conventions
+
+- TDD preferred for new code
+- Tests live next to source or in tests/ mirror"
+`;
+
+exports[`buildAgentsIndex snapshots > matches snapshot for frontend-only 1`] = `
+"### Project structure
+
+- Components: \`src/components/\` — reusable UI
+- Pages: \`src/app/\` (or \`src/pages/\`) — route-level
+- Design tokens: \`src/design/\` — colors, typography
+- Hooks/state: \`src/hooks/\`, \`src/stores/\`
+
+### Conventions
+
+- TDD preferred for new code
+- Tests live next to source or in tests/ mirror"
+`;
+
+exports[`buildAgentsIndex snapshots > matches snapshot for library 1`] = `
+"### Project structure
+
+- Public API: \`src/index.ts\` — barrel exports
+- Core modules: \`src/<module>/\`
+- Types: \`src/types.ts\`
+- Examples: \`examples/\`
+
+### Conventions
+
+- TDD preferred for new code
+- Tests live next to source or in tests/ mirror"
+`;
+
+exports[`buildAgentsIndex snapshots > matches snapshot for marketplace 1`] = `
+"### Project structure
+
+- Backend: \`src/api/\`
+- Seller portal: \`src/seller/\`
+- Buyer UI: \`src/buyer/\`
+- Payments: \`src/payments/\`
+- Database: \`src/db/\`
+
+### Conventions
+
+- TDD preferred for new code
+- Tests live next to source or in tests/ mirror"
+`;
+
+exports[`buildAgentsIndex snapshots > matches snapshot for ml-service 1`] = `
+"### Project structure
+
+- Training: \`src/train/\`
+- Inference API: \`src/serve/\`
+- Data loaders: \`src/data/\`
+- Models: \`src/models/\`
+- Notebooks: \`notebooks/\`
+
+### Conventions
+
+- TDD preferred for new code
+- Tests live next to source or in tests/ mirror"
+`;
+
+exports[`buildAgentsIndex snapshots > matches snapshot for saas-b2b 1`] = `
+"### Project structure
+
+- Backend API: \`src/api/\` — REST/GraphQL handlers
+- Database: \`src/db/\` — schema + migrations
+- Frontend: \`src/web/\` — UI application
+- Jobs: \`src/jobs/\` — async workers
+- Shared: \`src/shared/\` — types, utils
+
+### Conventions
+
+- TDD preferred for new code
+- Tests live next to source or in tests/ mirror"
+`;
+
+exports[`buildAgentsIndex snapshots > matches snapshot for saas-b2c 1`] = `
+"### Project structure
+
+- Backend API: \`src/api/\` — REST/GraphQL handlers
+- Database: \`src/db/\` — schema + migrations
+- Frontend: \`src/web/\` — UI application
+- Jobs: \`src/jobs/\` — async workers
+- Shared: \`src/shared/\` — types, utils
+
+### Conventions
+
+- TDD preferred for new code
+- Tests live next to source or in tests/ mirror"
+`;
+
+exports[`buildClaudeIndex snapshots > matches snapshot for cli 1`] = `
+"- Entry: \`src/cli.ts\` — command parsing
+- Commands: \`src/commands/<name>.ts\`
+- Core logic: \`src/core/\`
+- Utils: \`src/utils/\`"
+`;
+
+exports[`buildClaudeIndex snapshots > matches snapshot for frontend-only 1`] = `
+"- Components: \`src/components/\` — reusable UI
+- Pages: \`src/app/\` (or \`src/pages/\`) — route-level
+- Design tokens: \`src/design/\` — colors, typography
+- Hooks/state: \`src/hooks/\`, \`src/stores/\`"
+`;
+
+exports[`buildClaudeIndex snapshots > matches snapshot for library 1`] = `
+"- Public API: \`src/index.ts\` — barrel exports
+- Core modules: \`src/<module>/\`
+- Types: \`src/types.ts\`
+- Examples: \`examples/\`"
+`;
+
+exports[`buildClaudeIndex snapshots > matches snapshot for marketplace 1`] = `
+"- Backend: \`src/api/\`
+- Seller portal: \`src/seller/\`
+- Buyer UI: \`src/buyer/\`
+- Payments: \`src/payments/\`
+- Database: \`src/db/\`"
+`;
+
+exports[`buildClaudeIndex snapshots > matches snapshot for ml-service 1`] = `
+"- Training: \`src/train/\`
+- Inference API: \`src/serve/\`
+- Data loaders: \`src/data/\`
+- Models: \`src/models/\`
+- Notebooks: \`notebooks/\`"
+`;
+
+exports[`buildClaudeIndex snapshots > matches snapshot for saas-b2b 1`] = `
+"- Backend API: \`src/api/\` — REST/GraphQL handlers
+- Database: \`src/db/\` — schema + migrations
+- Frontend: \`src/web/\` — UI application
+- Jobs: \`src/jobs/\` — async workers
+- Shared: \`src/shared/\` — types, utils"
+`;
+
+exports[`buildClaudeIndex snapshots > matches snapshot for saas-b2c 1`] = `
+"- Backend API: \`src/api/\` — REST/GraphQL handlers
+- Database: \`src/db/\` — schema + migrations
+- Frontend: \`src/web/\` — UI application
+- Jobs: \`src/jobs/\` — async workers
+- Shared: \`src/shared/\` — types, utils"
+`;
+
+exports[`buildDesignSpecBody snapshots > matches snapshot for frontend-only + brutalist 1`] = `
+"## Aesthetic guidance (brutalist)
+
+Heavy typography, raw edges, deliberate asymmetry. Monospace + display fonts. Black/white + one accent. No gradients.
+
+## Archetype context
+
+This is a \`frontend-only\` archetype. See \`methodology/20-stack.md\` for default stack choices.
+
+## Design Gates (from methodology/materializacoes.md)
+
+- [ ] Aesthetic direction locked
+- [ ] 3-5 references curated per direction
+- [ ] Impeccable harness active (if available)
+- [ ] shadcn/ui context loaded (if using shadcn)
+- [ ] First screen reviewed by a human with fresh eyes"
+`;
+
+exports[`buildDesignSpecBody snapshots > matches snapshot for marketplace + maximalist 1`] = `
+"## Aesthetic guidance (maximalist)
+
+Bold layered elements, multi-color palette, pattern fills, animated micro-interactions.
+
+## Archetype context
+
+This is a \`marketplace\` archetype. See \`methodology/20-stack.md\` for default stack choices.
+
+## Design Gates (from methodology/materializacoes.md)
+
+- [ ] Aesthetic direction locked
+- [ ] 3-5 references curated per direction
+- [ ] Impeccable harness active (if available)
+- [ ] shadcn/ui context loaded (if using shadcn)
+- [ ] First screen reviewed by a human with fresh eyes"
+`;
+
+exports[`buildDesignSpecBody snapshots > matches snapshot for saas-b2b + editorial 1`] = `
+"## Aesthetic guidance (editorial)
+
+Magazine-inspired layouts. Generous white space. Serif body, sans heading. Image-text rhythm.
+
+## Archetype context
+
+This is a \`saas-b2b\` archetype. See \`methodology/20-stack.md\` for default stack choices.
+
+## Design Gates (from methodology/materializacoes.md)
+
+- [ ] Aesthetic direction locked
+- [ ] 3-5 references curated per direction
+- [ ] Impeccable harness active (if available)
+- [ ] shadcn/ui context loaded (if using shadcn)
+- [ ] First screen reviewed by a human with fresh eyes"
+`;
