@@ -94,6 +94,37 @@ See `docs/superpowers/specs/2026-04-17-matilha-v1-design.md` in the Memory vault
 - Wave 6: Polish + npm publish + marketplace submission
 - Wave 7: Cross-tool publishing + validation
 
+## Wave 2f — UX Baseline Reformulation (2026-04-20)
+
+Complete overhaul of every command's UX against the Matilha UX Foundation
+(12 principles from Krug, Weinschenk 10 domains, frameworks comportamentais,
+context-engineering). See:
+
+- Foundation: `wiki/analyses/matilha-ux-foundation.md` (if vendored)
+- Reformulation spec: `docs/superpowers/specs/2026-04-20-matilha-ux-reformulation-design.md`
+
+**What changed:**
+
+- Every error message now follows the Weinschenk 5-rule (summary / context /
+  problem / next action / example).
+- `init`, `scout`, `plan`, `attest` emit streaming progress (status-line per
+  step).
+- `howl` and `plan-status` show *remaining gates* instead of done count.
+- `attest` without arguments now opens an **interactive picker** (TUI) of
+  pending gates — grouped by phase. Passing a gate-key as argument still works
+  for scripting.
+- Gate status uses **text labels** (`[yes]` / `[pending]` / `[no]`) in
+  addition to color — accessible to colorblind users and screen readers.
+- Registry templates (`CLAUDE.md`, `spec.md`, `plan.md`, etc) rewritten with
+  chunked sections, "good example" comments, and narrative footers.
+
+**Breaking change:**
+
+- `matilha attest` with no argument previously errored. Now launches TUI. If
+  you were scripting around the error, keep passing the gate-key.
+
+**Tests:** 204 → ~290.
+
 ## License
 
 MIT © Danilo de Sousa
