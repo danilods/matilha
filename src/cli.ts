@@ -9,6 +9,7 @@ import { planCommand } from "./plan/planCommand";
 import { attestCommand } from "./plan/attestCommand";
 import { statusCommand } from "./plan/statusCommand";
 import { handleCommandError } from "./ui/handleCommandError";
+import { listCommand } from "./list/listCommand";
 
 const program = new Command();
 
@@ -20,22 +21,13 @@ program
 program
   .command("list")
   .description("List skills available in the Matilha registry")
-  .action(async () => {
-    printBanner();
-    const client = new RegistryClient();
+  .option("--json", "output as JSON for scripting", false)
+  .action(async (opts: { json: boolean }) => {
     try {
-      const entries = await client.list();
-      if (entries.length === 0) {
-        console.log("Registry is empty (not yet populated).");
-        return;
-      }
-      console.log("Available skills:\n");
-      for (const e of entries) {
-        console.log(`  ${e.slug.padEnd(30)}${e.name}`);
-      }
+      const client = new RegistryClient();
+      await listCommand({ client, json: opts.json });
     } catch (err) {
-      console.error(`Failed to fetch registry: ${(err as Error).message}`);
-      process.exitCode = 1;
+      handleCommandError(err, "running 'matilha list'");
     }
   });
 
