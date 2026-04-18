@@ -3,6 +3,7 @@ import { VERSION } from "./index";
 import { printBanner } from "./ui/banner";
 import { RegistryClient } from "./registry";
 import { initProject, printInitReport } from "./init/initProject";
+import { howlCommand } from "./howl/howlCommand";
 
 const program = new Command();
 
@@ -54,6 +55,19 @@ program
   .action(async (opts: { dryRun: boolean }) => {
     const result = await initProject(process.cwd(), { dryRun: opts.dryRun });
     printInitReport(result);
+  });
+
+program
+  .command("howl")
+  .description("Show Matilha project state and next action")
+  .option("--json", "output as JSON for scripting", false)
+  .action(async (opts: { json: boolean }) => {
+    try {
+      await howlCommand(process.cwd(), { json: opts.json });
+    } catch (err) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exitCode = 1;
+    }
   });
 
 program.parse(process.argv);
