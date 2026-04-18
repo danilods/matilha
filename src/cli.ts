@@ -6,6 +6,7 @@ import { initProject, printInitReport } from "./init/initProject";
 import { howlCommand } from "./howl/howlCommand";
 import { scoutCommand } from "./scout/scoutCommand";
 import { planCommand } from "./plan/planCommand";
+import { attestCommand } from "./plan/attestCommand";
 
 const program = new Command();
 
@@ -99,6 +100,20 @@ program
         dryRun: opts.dryRun,
         force: opts.force
       });
+    } catch (err) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exitCode = 1;
+    }
+  });
+
+program
+  .command("attest <gateKey>")
+  .description("Attest a phase gate after the corresponding spec section is filled")
+  .option("--feature <slug>", "feature name if multiple artifacts")
+  .option("--force", "override validation failure", false)
+  .action(async (gateKey: string, opts: { feature?: string; force: boolean }) => {
+    try {
+      await attestCommand(process.cwd(), gateKey, { feature: opts.feature, force: opts.force });
     } catch (err) {
       console.error(err instanceof Error ? err.message : String(err));
       process.exitCode = 1;
