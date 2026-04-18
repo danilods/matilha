@@ -34,7 +34,7 @@ export async function askInputs(detected: readonly Tool[], existing: boolean): P
   const projectName = await text({
     message: "Project name?",
     placeholder: "my-project",
-    validate: (v: string) => (v.trim().length > 0 ? undefined : "Name required")
+    validate: (v: string | undefined) => (v && v.trim().length > 0 ? undefined : "Name required")
   });
   if (isCancel(projectName)) {
     cancel("Cancelled.");

@@ -35,7 +35,7 @@ export function parseGateKeysFromMethodology(content: string): string[] {
   // Find "## Gates de saída" section (tolerant to accent/case)
   const sectionMatch = /##\s+Gates de sa[íi]da[^\n]*\n([\s\S]*?)(?=\n##\s|$)/i.exec(content);
   if (!sectionMatch) return [];
-  const section = sectionMatch[1];
+  const section = sectionMatch[1] ?? "";
   // Count the bullet/checkbox items as a rough heuristic
   const bullets = section.match(/^-\s+\[\s*[x ]\s*\]/gm) ?? [];
   // Return empty placeholder keys (we can't accurately derive keys from prose);

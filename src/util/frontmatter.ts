@@ -12,7 +12,7 @@ export function parseFrontmatter<T = unknown>(markdown: string): Frontmatter<T> 
   if (!match) {
     throw new Error("Invalid frontmatter: expected --- delimited YAML block at start");
   }
-  const [, yamlBlock, body] = match;
+  const [, yamlBlock = "", body] = match;
   const data = YAML.parse(yamlBlock) as T;
   return { data, body: body ?? "" };
 }

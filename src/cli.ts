@@ -5,6 +5,7 @@ import { RegistryClient } from "./registry";
 import { initProject, printInitReport } from "./init/initProject";
 import { howlCommand } from "./howl/howlCommand";
 import { scoutCommand } from "./scout/scoutCommand";
+import { planCommand } from "./plan/planCommand";
 
 const program = new Command();
 
@@ -77,6 +78,27 @@ program
   .action(async () => {
     try {
       await scoutCommand(process.cwd());
+    } catch (err) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exitCode = 1;
+    }
+  });
+
+program
+  .command("plan <slug>")
+  .description("Scaffold spec+plan for a feature (Phases 10-30)")
+  .option("--import-research <file>", "import a deep-research markdown as Section 1 context")
+  .option("--archetype <archetype>", "override archetype from project-status")
+  .option("--dry-run", "preview writes without touching disk", false)
+  .option("--force", "overwrite existing spec", false)
+  .action(async (slug: string, opts: { importResearch?: string; archetype?: string; dryRun: boolean; force: boolean }) => {
+    try {
+      await planCommand(process.cwd(), slug, {
+        importResearchPath: opts.importResearch,
+        archetype: opts.archetype,
+        dryRun: opts.dryRun,
+        force: opts.force
+      });
     } catch (err) {
       console.error(err instanceof Error ? err.message : String(err));
       process.exitCode = 1;
