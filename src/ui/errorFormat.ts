@@ -15,13 +15,21 @@ export class MatilhaUserError extends Error {
   }
 }
 
+function colors(): typeof pc {
+  if (process.env.NO_COLOR || process.env.MATILHA_ASCII) {
+    return pc.createColors(false) as typeof pc;
+  }
+  return pc;
+}
+
 export function formatError(err: MatilhaError): string {
-  const header = `${pc.red("error:")} ${err.summary}`;
+  const c = colors();
+  const header = `${c.red("error:")} ${err.summary}`;
   const body = `\n  ${err.context}\n  ${err.problem}`;
-  const nextHeader = `\n\n${pc.bold("next:")}`;
+  const nextHeader = `\n\n${c.bold("next:")}`;
   const actions = err.nextActions.map((a) => `  ${a}`).join("\n");
-  const exampleBlock = err.example
-    ? `\n\n${pc.bold("example:")}\n  ${err.example}`
+  const exampleBlock = err.example !== undefined
+    ? `\n\n${c.bold("example:")}\n  ${err.example}`
     : "";
   return header + body + nextHeader + "\n" + actions + exampleBlock + "\n";
 }

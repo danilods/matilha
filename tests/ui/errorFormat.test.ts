@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { formatError, MatilhaUserError, type MatilhaError } from "../../src/ui/errorFormat";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { formatError, printError, MatilhaUserError, type MatilhaError } from "../../src/ui/errorFormat";
 
 const baseError: MatilhaError = {
   summary: "something went wrong",
@@ -55,17 +55,76 @@ describe("formatError", () => {
     expect(out).toContain("read `matilha --help`");
   });
 
-  it("respects NO_COLOR env var (no ansi escapes in output)", () => {
+  it("NO_COLOR=1 strips ANSI escapes even when terminal claims color support", () => {
+    const originalNo = process.env.NO_COLOR;
+    const originalForce = process.env.FORCE_COLOR;
+    process.env.FORCE_COLOR = "1";
     process.env.NO_COLOR = "1";
-    const out = formatError(baseError);
-    expect(out).not.toMatch(/\u001b\[/);
+    try {
+      const err: MatilhaError = {
+        summary: "test",
+        context: "ctx",
+        problem: "prob",
+        nextActions: ["act"]
+      };
+      const out = formatError(err);
+      // eslint-disable-next-line no-control-regex
+      expect(out).not.toMatch(/\u001b\[/);
+    } finally {
+      if (originalNo === undefined) delete process.env.NO_COLOR;
+      else process.env.NO_COLOR = originalNo;
+      if (originalForce === undefined) delete process.env.FORCE_COLOR;
+      else process.env.FORCE_COLOR = originalForce;
+    }
   });
 
-  it("preserves plain ASCII when --ascii mode is set via env", () => {
+  it("MATILHA_ASCII=1 strips ANSI escapes (same as NO_COLOR)", () => {
+    const originalAscii = process.env.MATILHA_ASCII;
+    const originalForce = process.env.FORCE_COLOR;
+    process.env.FORCE_COLOR = "1";  // force picocolors to claim color support
     process.env.MATILHA_ASCII = "1";
-    const out = formatError(baseError);
-    // No unicode box-drawing characters in the output.
-    expect(out).not.toMatch(/[\u2500-\u257F]/);
+    try {
+      const err: MatilhaError = {
+        summary: "test",
+        context: "ctx",
+        problem: "prob",
+        nextActions: ["act"]
+      };
+      const out = formatError(err);
+      // eslint-disable-next-line no-control-regex
+      expect(out).not.toMatch(/\u001b\[/);
+    } finally {
+      if (originalAscii === undefined) delete process.env.MATILHA_ASCII;
+      else process.env.MATILHA_ASCII = originalAscii;
+      if (originalForce === undefined) delete process.env.FORCE_COLOR;
+      else process.env.FORCE_COLOR = originalForce;
+    }
+  });
+});
+
+describe("printError", () => {
+  it("printError writes to stderr (not stdout)", () => {
+    const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    try {
+      const err: MatilhaError = {
+        summary: "s",
+        context: "c",
+        problem: "p",
+        nextActions: ["a"]
+      };
+      printError(err);
+      expect(stderrSpy).toHaveBeenCalled();
+      expect(stdoutSpy).not.toHaveBeenCalled();
+      const captured = String(stderrSpy.mock.calls[0][0]);
+      // Strip ANSI escapes so the assertion holds regardless of FORCE_COLOR.
+      // eslint-disable-next-line no-control-regex
+      const plain = captured.replace(/\u001b\[[0-9;]*m/g, "");
+      expect(plain).toContain("error: s");
+    } finally {
+      stderrSpy.mockRestore();
+      stdoutSpy.mockRestore();
+    }
   });
 });
 
