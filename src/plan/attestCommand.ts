@@ -18,6 +18,8 @@ export type AttestOptions = {
 
 type Phase = 10 | 20 | 30;
 
+const PHASE_40_NEXT_ACTION = "run 'matilha hunt <plan-slug>' to decompose into waves (Phase 40)";
+
 function resolvePhase(gateKey: string): Phase | null {
   for (const phase of [10, 20, 30] as const) {
     if ((PHASE_GATE_KEYS[phase] as readonly string[]).includes(gateKey)) {
@@ -53,7 +55,7 @@ function nextPhase(phase: Phase): Phase | null {
 function nextActionFor(phase: Phase): string {
   if (phase === 20) return "fill sections on stack decisions; then run 'matilha attest' for Phase 20 gates";
   if (phase === 30) return "fill sections on skills/agents; then run 'matilha attest' for Phase 30 gates";
-  return "run 'matilha hunt <plan-slug>' to decompose into waves (Phase 40)";
+  return PHASE_40_NEXT_ACTION;
 }
 
 function resolveFeature(
@@ -141,10 +143,10 @@ export async function attestCommand(
   let validationReason = "";
 
   if (phase === 10) {
-    s.step("reading spec").ok();
     const specContent = readFileSync(specPath, "utf-8");
-    s.step(`checking section for '${gateKey}'`).ok();
+    s.step("reading spec").ok();
     const result = validatePhase10Gate(gateKey, specContent);
+    s.step(`checking section for '${gateKey}'`).ok();
     if (!result.ok) {
       validationPassed = false;
       validationReason = result.reason;
@@ -191,7 +193,7 @@ export async function attestCommand(
       fm.data.next_action = nextActionFor(next);
       advanced = next;
     } else {
-      fm.data.next_action = nextActionFor(phase);
+      fm.data.next_action = PHASE_40_NEXT_ACTION;
     }
   }
 
@@ -217,7 +219,7 @@ export async function attestCommand(
     console.log(pc.bold(pc.green(`Phase 30 complete. ready for Phase 40 (wave dispatch).`)));
     console.log("");
     console.log(pc.bold("next:"));
-    console.log(`  ${nextActionFor(phase)}`);
+    console.log(`  ${PHASE_40_NEXT_ACTION}`);
   } else {
     console.log(pc.dim(`${remaining} gate${remaining === 1 ? "" : "s"} remaining in Phase ${phase}.`));
     console.log("");
