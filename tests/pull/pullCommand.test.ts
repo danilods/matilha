@@ -49,4 +49,38 @@ describe("pullCommand", () => {
       expect(e.matilhaError.nextActions.some((a) => a.includes("matilha list"))).toBe(true);
     }
   });
+
+  it("throws 'invalid slug format' error when slug fails regex validation", async () => {
+    const client = makeClient(new Error("Invalid slug format"));
+    try {
+      await pullCommand({ client, slug: "Bad/Slug" });
+      throw new Error("expected throw");
+    } catch (e) {
+      if (!(e instanceof MatilhaUserError)) throw e;
+      expect(e.matilhaError.summary).toContain("invalid slug format");
+    }
+  });
+
+  it("throws 'registry unreachable' error when fetch fails with network error", async () => {
+    const client = makeClient(new Error("fetch failed"));
+    try {
+      await pullCommand({ client, slug: "x" });
+      throw new Error("expected throw");
+    } catch (e) {
+      if (!(e instanceof MatilhaUserError)) throw e;
+      expect(e.matilhaError.summary).toContain("registry unreachable");
+      expect(e.matilhaError.problem).toContain("fetch failed");
+    }
+  });
+
+  it("preserves specificity: 'not found' error is distinct from unreachable", async () => {
+    const client = makeClient(new Error("Slug not found in registry: x"));
+    try {
+      await pullCommand({ client, slug: "x" });
+      throw new Error("expected throw");
+    } catch (e) {
+      if (!(e instanceof MatilhaUserError)) throw e;
+      expect(e.matilhaError.summary).toBe("resource not found in registry");
+    }
+  });
 });
