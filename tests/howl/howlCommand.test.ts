@@ -65,6 +65,38 @@ blockers: []
 ---
 # Body`;
 
+const PHASE_20_IN_PROGRESS = `---
+schema_version: 1
+name: phase20-proj
+archetype: saas-b2b
+created: "2026-04-19T10:00:00Z"
+last_update: "2026-04-19T10:00:00Z"
+current_phase: 20
+phase_status: in_progress
+next_action: "Continue Phase 20 gates"
+phase_20_gates:
+  stack_table_declared: yes
+  architecture_doc_exists: yes
+  rnf_traceability: pending
+  docker_compose_mirrors_prod: pending
+  env_example_created: pending
+  versions_pinned: pending
+tools_detected:
+  - claude-code
+companion_skills:
+  impeccable: not_installed
+  shadcn: not_installed
+  superpowers: not_installed
+  typeui: not_installed
+active_waves: []
+completed_waves: []
+feature_artifacts: []
+recent_decisions: []
+pending_decisions: []
+blockers: []
+---
+# Body`;
+
 describe("howlCommand", () => {
   let tmp: string;
   let logs: string[];
@@ -144,6 +176,22 @@ describe("howlCommand chunked output (Wave 2f)", () => {
     await howlCommand(tmp, {});
     const out = logs.join("\n");
     expect(out).toContain("plan-status");
+    expect(out).toContain("matilha scout");
+  });
+
+  it("omits 'matilha scout' hint when phase >= 10", async () => {
+    writeFileSync(join(tmp, "project-status.md"), PHASE_10_IN_PROGRESS);
+    await howlCommand(tmp, {});
+    const out = logs.join("\n");
+    expect(out).toContain("matilha plan-status");
+    expect(out).not.toContain("matilha scout");
+  });
+
+  it("counts phase 20 gates correctly ('4 of 6')", async () => {
+    writeFileSync(join(tmp, "project-status.md"), PHASE_20_IN_PROGRESS);
+    await howlCommand(tmp, {});
+    const out = logs.join("\n");
+    expect(out).toContain("4 of 6");
   });
 
   it("shows '(none)' explicit when lists are empty (recognition, not silence)", async () => {
