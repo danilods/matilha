@@ -1,4 +1,4 @@
-import pc from "picocolors";
+import { colors } from "./colors";
 
 export type MatilhaError = {
   summary: string;
@@ -13,13 +13,6 @@ export class MatilhaUserError extends Error {
     super(matilhaError.summary);
     this.name = "MatilhaUserError";
   }
-}
-
-function colors(): typeof pc {
-  if (process.env.NO_COLOR || process.env.MATILHA_ASCII) {
-    return pc.createColors(false) as typeof pc;
-  }
-  return pc;
 }
 
 export function formatError(err: MatilhaError): string {

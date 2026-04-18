@@ -1,4 +1,5 @@
-import pc from "picocolors";
+import type pc from "picocolors";
+import { colors } from "./colors";
 
 export type StepStatus = "ok" | "warn" | "fail" | "skip" | "dry-run";
 
@@ -15,13 +16,6 @@ export interface Stream {
   section(title: string): void;
   step(label: string): StepHandle;
   footer(content: string): void;
-}
-
-function colors(): typeof pc {
-  if (process.env.NO_COLOR || process.env.MATILHA_ASCII) {
-    return pc.createColors(false) as typeof pc;
-  }
-  return pc;
 }
 
 const STATUS_LABELS: Record<StepStatus, string> = {

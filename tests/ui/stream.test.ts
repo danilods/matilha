@@ -90,6 +90,29 @@ describe("stream", () => {
     }
   });
 
+  it("step emits label and status on the SAME line", () => {
+    const s = createStream();
+    s.step("fetching templates").ok();
+    const out = captured.join("");
+    // Find the line containing both the label and the status
+    const lines = out.split("\n");
+    const line = lines.find((l) => l.includes("fetching templates"));
+    expect(line).toBeDefined();
+    // Strip ANSI for text check
+    const stripped = line!.replace(/\u001b\[[0-9;]*m/g, "");
+    expect(stripped).toContain("ok");
+  });
+
+  it("step respects LABEL_COLUMN alignment for short labels", () => {
+    const s = createStream();
+    s.step("a").ok();
+    const out = captured.join("");
+    const line = out.split("\n").find((l) => l.includes("a"))!;
+    const stripped = line.replace(/\u001b\[[0-9;]*m/g, "");
+    // Expect "  a" followed by at least 20 spaces before "ok" (LABEL_COLUMN=28, label is 1 char, 2-space prefix)
+    expect(stripped).toMatch(/^ {2}a {20,}ok/);
+  });
+
   it("respects MATILHA_ASCII (strips ANSI; text labels present)", () => {
     const originalAscii = process.env.MATILHA_ASCII;
     const originalForce = process.env.FORCE_COLOR;
