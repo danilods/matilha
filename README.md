@@ -24,6 +24,16 @@ Agentic methodology plugin + CLI for Claude Code, Cursor, Codex, and Gemini CLI.
 - `matilha list` now returns real skills from registry
 - `matilha pull <slug>` fetches actual skill markdown
 
+## What's in Wave 2b
+
+- `matilha init` functional end-to-end: detect tools → ask archetype + aesthetic → fetch templates from registry → write CLAUDE.md + AGENTS.md + project-status.md + design-spec.md (if frontend) → detect + offer companions (Impeccable, shadcn, Superpowers) → write 10 skills per detected tool
+- `--dry-run` flag for preview mode
+- Templates fetched from `github.com/danilods/matilha-skills/templates/` (not bundled)
+- Companions registry-driven via `companions.json` (add a 4th companion = push to matilha-skills, zero CLI release)
+- Uses existing `src/domain/projectStatusSchema.ts` (Wave 1) as SoR — no duplicate schema introduced
+- 136 tests green (68 at Wave 2a close + 68 added in Wave 2b)
+- New deps: `@clack/prompts` for interactive CLI UX
+
 ## Try the CLI locally
 
 ```
