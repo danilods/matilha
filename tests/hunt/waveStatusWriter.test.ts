@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { writeWaveStatus } from "../../src/hunt/waveStatusWriter";
 import { parse as parseYaml } from "yaml";
-import type { Wave } from "../../src/domain/waveSchema";
+import { waveSchema, type Wave } from "../../src/domain/waveSchema";
 
 describe("writeWaveStatus", () => {
   it("writes valid YAML frontmatter conforming to waveSchema", () => {
@@ -31,7 +31,7 @@ describe("writeWaveStatus", () => {
       const content = readFileSync(outPath, "utf-8");
       const fmMatch = content.match(/^---\n([\s\S]*?)\n---\n/);
       expect(fmMatch).toBeDefined();
-      const fm = parseYaml(fmMatch![1]) as Wave;
+      const fm = waveSchema.parse(parseYaml(fmMatch![1]));
       expect(fm.wave).toBe("w1");
       expect(fm.sps.SP1.branch).toBe("wave-01-sp-db");
     } finally { rmSync(dir, { recursive: true, force: true }); }
