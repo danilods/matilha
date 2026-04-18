@@ -34,6 +34,15 @@ Agentic methodology plugin + CLI for Claude Code, Cursor, Codex, and Gemini CLI.
 - 136 tests green (68 at Wave 2a close + 68 added in Wave 2b)
 - New deps: `@clack/prompts` for interactive CLI UX
 
+## What's in Wave 2c
+
+- `matilha howl` functional: reads project-status.md, prints colored summary (text) or JSON (`--json`)
+- `matilha scout` functional: Phase 00 discovery — interactive prompts, writes docs/matilha/discovery-notes.md, advances project-status from phase 0 to 10 with all gates set
+- `src/util/frontmatter.ts`: reusable YAML frontmatter parse/serialize
+- `src/util/projectStatus.ts`: read/write project-status.md with Zod schema validation
+- 153 tests passing
+- New deps: `yaml`, `picocolors`
+
 ## Try the CLI locally
 
 ```
