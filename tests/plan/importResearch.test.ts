@@ -32,7 +32,7 @@ describe("importResearch", () => {
   });
 
   it("throws on missing file", () => {
-    expect(() => importResearch(join(tmp, "nope.md"))).toThrow(/File not found/);
+    expect(() => importResearch(join(tmp, "nope.md"))).toThrow(/not found/i);
   });
 
   it("throws on wrong extension", () => {

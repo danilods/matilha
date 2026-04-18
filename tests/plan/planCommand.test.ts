@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { planCommand } from "../../src/plan/planCommand";
 import { RegistryClient } from "../../src/registry/registryClient";
+import { MatilhaUserError } from "../../src/ui/errorFormat";
 
 const VALID_STATUS_PHASE_10 = `---
 schema_version: 1
@@ -167,5 +168,71 @@ describe("planCommand", () => {
     expect(content).toContain("Imported from `research.md`");
     expect(content).toContain("<!-- MATILHA_RESEARCH_START -->");
     expect(content).toContain("# Deep Research");
+  });
+});
+
+describe("planCommand Wave 2f output", () => {
+  let tmp: string;
+  let writeSpy: ReturnType<typeof vi.spyOn>;
+  let logSpy: ReturnType<typeof vi.spyOn>;
+  let chunks: string[];
+
+  beforeEach(() => {
+    tmp = mkdtempSync(join(tmpdir(), "plan-w2f-"));
+    chunks = [];
+    writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(((chunk: string | Uint8Array): boolean => {
+      chunks.push(typeof chunk === "string" ? chunk : Buffer.from(chunk).toString("utf-8"));
+      return true;
+    }) as typeof process.stdout.write);
+    logSpy = vi.spyOn(console, "log").mockImplementation((msg: unknown) => {
+      chunks.push(typeof msg === "string" ? msg : JSON.stringify(msg));
+    });
+  });
+
+  afterEach(() => {
+    writeSpy.mockRestore();
+    logSpy.mockRestore();
+    rmSync(tmp, { recursive: true, force: true });
+  });
+
+  it("streams pre-flight checks", async () => {
+    writeFileSync(join(tmp, "project-status.md"), VALID_STATUS_PHASE_10);
+    await planCommand(tmp, "feat-stream", { registryClient: makeMockClient() });
+    const output = chunks.join("\n");
+    expect(output).toContain("pre-flight");
+    expect(output).toContain("slug format");
+    expect(output).toContain("current_phase >= 10");
+  });
+
+  it("emits MatilhaUserError with 5-rule payload for bad slug", async () => {
+    writeFileSync(join(tmp, "project-status.md"), VALID_STATUS_PHASE_10);
+    try {
+      await planCommand(tmp, "Bad Slug!", { registryClient: makeMockClient() });
+      throw new Error("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(MatilhaUserError);
+      const me = (err as MatilhaUserError).matilhaError;
+      expect(me.summary).toMatch(/slug/i);
+      expect(me.example).toBeDefined();
+      expect(me.nextActions.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("emits bookend with spec/plan paths + next guidance", async () => {
+    writeFileSync(join(tmp, "project-status.md"), VALID_STATUS_PHASE_10);
+    await planCommand(tmp, "feat-bookend", { registryClient: makeMockClient() });
+    const output = chunks.join("\n");
+    expect(output).toContain("docs/matilha/specs/");
+    expect(output).toContain("docs/matilha/plans/");
+    expect(output).toContain("next:");
+    expect(output).toContain("companions");
+  });
+
+  it("superpowers companion gets brainstorming guidance", async () => {
+    const statusSp = VALID_STATUS_PHASE_10.replace("superpowers: not_installed", "superpowers: installed");
+    writeFileSync(join(tmp, "project-status.md"), statusSp);
+    await planCommand(tmp, "feat-sp", { registryClient: makeMockClient() });
+    const output = chunks.join("\n");
+    expect(output).toMatch(/superpowers:brainstorming|superpowers:writing-plans/);
   });
 });
