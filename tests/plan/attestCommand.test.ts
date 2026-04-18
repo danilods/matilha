@@ -248,8 +248,72 @@ describe("attestCommand", () => {
       expect(e).toBeInstanceOf(MatilhaUserError);
       const me = (e as InstanceType<typeof MatilhaUserError>).matilhaError;
       expect(me.summary).toMatch(/spec section is incomplete/i);
+      expect(me.context).toMatch(/validating gate/i);
+      expect(me.problem).toBeTruthy();
       expect(me.nextActions.length).toBeGreaterThan(0);
       expect(me.example).toBeDefined();
     }
+  });
+
+  it("phase 30 completion writes Phase 40 next_action", async () => {
+    const phase30Status = `---
+schema_version: 1
+name: test-proj
+archetype: saas-b2b
+created: "2026-04-19T10:00:00Z"
+last_update: "2026-04-19T10:00:00Z"
+current_phase: 30
+phase_status: in_progress
+next_action: "attest phase 30 gates"
+tools_detected:
+  - claude-code
+companion_skills:
+  impeccable: not_installed
+  shadcn: not_installed
+  superpowers: not_installed
+  typeui: not_installed
+active_waves: []
+completed_waves: []
+feature_artifacts:
+  - name: feat-a
+    spec: docs/matilha/specs/2026-04-19-feat-a-spec.md
+    plan: docs/matilha/plans/2026-04-19-feat-a-plan.md
+    phase: planning
+    wave: w1
+    owned_by: matilha
+recent_decisions: []
+pending_decisions: []
+blockers: []
+phase_10_gates:
+  problem_defined: yes
+  target_user_clear: yes
+  rfs_enumerated: yes
+  rnfs_covered: yes
+  risks_listed: yes
+  premissas_listed: yes
+  success_metrics_defined: yes
+  aha_moment_identified: yes
+  scope_boundaries_locked: yes
+  peer_review_done: yes
+phase_20_gates:
+  stack_table_declared: yes
+  architecture_doc_exists: yes
+  rnf_traceability: yes
+  docker_compose_mirrors_prod: yes
+  env_example_created: yes
+  versions_pinned: yes
+phase_30_gates:
+  claude_md_declares_stack_rules: yes
+  skills_by_domain: yes
+  skills_by_key_tech: yes
+  agents_with_models: yes
+  one_blocking_hook: pending
+---
+# Body`;
+    setup(phase30Status, SPEC_WITH_SECTION_2_FILLED);
+    await attestCommand(tmp, { gateKey: "one_blocking_hook" });
+    const finalState = readFileSync(join(tmp, "project-status.md"), "utf-8");
+    expect(finalState).toContain("one_blocking_hook: yes");
+    expect(finalState).toMatch(/next_action:.*matilha hunt.*Phase 40/);
   });
 });
