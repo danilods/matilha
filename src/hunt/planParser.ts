@@ -53,7 +53,7 @@ function extractBlock(lines: string[], startIdx: number, endIdx: number, marker:
   return m[1]!.split("\n")
     .map((l) => l.trim())
     .filter((l) => l.startsWith("- "))
-    .map((l) => l.replace(/^-\s*(?:\[\s*[x ]?\s*\])?\s*/, "").trim())
+    .map((l) => l.replace(/^-\s*(?:\[\s*[xX ]?\s*\])?\s*/, "").trim())
     .filter(Boolean);
 }
 

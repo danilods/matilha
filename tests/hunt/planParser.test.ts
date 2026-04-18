@@ -93,7 +93,7 @@ describe("parsePlan", () => {
     const variant = sample.replace("### SP1 — Database schema for users", "### SP1 - Database schema for users");
     const result = parsePlan(variant);
     expect(result.waves[0].sps[0].title).toBe("Database schema for users");
-    expect(result.warnings.some((w) => w.toLowerCase().includes("hyphen") || w.includes("-"))).toBe(true);
+    expect(result.warnings.some((w) => w.toLowerCase().includes("hyphen"))).toBe(true);
   });
 
   it("hard-error on unrecognized SP heading", () => {
@@ -114,5 +114,29 @@ describe("parsePlan", () => {
   it("hard-error on SP heading in body not declared in frontmatter", () => {
     const extra = sample + "\n### SP42 — Orphan\n\n**Acceptance**\n- [ ] x\n\n**Touches**\n- x.ts\n";
     expect(() => parsePlan(extra)).toThrow(MatilhaUserError);
+  });
+
+  it("strips uppercase [X] checkbox prefix from bullets", () => {
+    const plan = `---
+name: test-uppercase
+spec: ../specs/test.md
+created: "2026-04-18"
+waves:
+  w1:
+    - SP1
+---
+
+## Wave 1
+
+### SP1 — Minimal SP
+
+**Acceptance**
+- [X] criterion
+
+**Touches**
+- src/foo.ts
+`;
+    const result = parsePlan(plan);
+    expect(result.waves[0]!.sps[0]!.acceptance[0]).toBe("criterion");
   });
 });
