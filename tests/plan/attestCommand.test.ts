@@ -1,8 +1,14 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { mkdtempSync, rmSync, writeFileSync, readFileSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+
+vi.mock("../../src/plan/attestInteractive", () => ({
+  pickPendingGate: vi.fn()
+}));
+
 import { attestCommand } from "../../src/plan/attestCommand";
+import { pickPendingGate } from "../../src/plan/attestInteractive";
 
 const STATUS_WITH_FEATURE = (extraGates: string = "") => `---
 schema_version: 1
@@ -129,6 +135,8 @@ describe("attestCommand", () => {
 
   beforeEach(() => {
     tmp = mkdtempSync(join(tmpdir(), "attest-"));
+    // Reset mock before each test
+    (pickPendingGate as ReturnType<typeof vi.fn>).mockReset();
   });
 
   afterEach(() => {
@@ -144,7 +152,7 @@ describe("attestCommand", () => {
 
   it("flips gate to yes when section is valid", async () => {
     setup(STATUS_WITH_FEATURE(), SPEC_WITH_SECTION_2_FILLED);
-    await attestCommand(tmp, "problem_defined");
+    await attestCommand(tmp, { gateKey: "problem_defined" });
 
     const updated = readFileSync(join(tmp, "project-status.md"), "utf-8");
     expect(updated).toContain("problem_defined: yes");
@@ -152,12 +160,12 @@ describe("attestCommand", () => {
 
   it("rejects when section has placeholder", async () => {
     setup(STATUS_WITH_FEATURE(), SPEC_WITH_SECTION_2_FILLED);
-    await expect(attestCommand(tmp, "target_user_clear")).rejects.toThrow(/placeholder|Validation failed/i);
+    await expect(attestCommand(tmp, { gateKey: "target_user_clear" })).rejects.toThrow(/placeholder|spec section is incomplete/i);
   });
 
   it("--force overrides validation failure and logs pending_decisions", async () => {
     setup(STATUS_WITH_FEATURE(), SPEC_WITH_SECTION_2_FILLED);
-    await attestCommand(tmp, "target_user_clear", { force: true });
+    await attestCommand(tmp, { gateKey: "target_user_clear", force: true });
 
     const updated = readFileSync(join(tmp, "project-status.md"), "utf-8");
     expect(updated).toContain("target_user_clear: yes");
@@ -174,13 +182,13 @@ describe("attestCommand", () => {
       "aha_moment_identified", "scope_boundaries_locked"
     ];
     for (const g of gates) {
-      await attestCommand(tmp, g);
+      await attestCommand(tmp, { gateKey: g });
     }
     const midState = readFileSync(join(tmp, "project-status.md"), "utf-8");
     expect(midState).toContain("current_phase: 10");
 
     // Attest the 10th → should advance to 20
-    await attestCommand(tmp, "peer_review_done");
+    await attestCommand(tmp, { gateKey: "peer_review_done" });
     const finalState = readFileSync(join(tmp, "project-status.md"), "utf-8");
     expect(finalState).toContain("current_phase: 20");
     expect(finalState).toContain("phase_status: not_started");
@@ -188,13 +196,13 @@ describe("attestCommand", () => {
 
   it("rejects unknown gate key", async () => {
     setup(STATUS_WITH_FEATURE(), SPEC_WITH_SECTION_2_FILLED);
-    await expect(attestCommand(tmp, "nonexistent_gate")).rejects.toThrow(/Unknown gate/i);
+    await expect(attestCommand(tmp, { gateKey: "nonexistent_gate" })).rejects.toThrow(/unknown gate key/i);
   });
 
   it("accepts phase 20 gate with minimal validation", async () => {
     // Phase 20 gates get minimal validation in Wave 2d
     setup(STATUS_WITH_FEATURE(), SPEC_WITH_SECTION_2_FILLED);
-    await attestCommand(tmp, "stack_table_declared");
+    await attestCommand(tmp, { gateKey: "stack_table_declared" });
     const updated = readFileSync(join(tmp, "project-status.md"), "utf-8");
     expect(updated).toContain("stack_table_declared: yes");
   });
@@ -202,6 +210,46 @@ describe("attestCommand", () => {
   it("rejects when feature_artifacts empty", async () => {
     const emptyStatus = STATUS_WITH_FEATURE().replace(/feature_artifacts:[\s\S]*?recent_decisions:/, "feature_artifacts: []\nrecent_decisions:");
     writeFileSync(join(tmp, "project-status.md"), emptyStatus);
-    await expect(attestCommand(tmp, "problem_defined")).rejects.toThrow(/No feature_artifacts|Run.*plan/i);
+    await expect(attestCommand(tmp, { gateKey: "problem_defined" })).rejects.toThrow(/no feature artifacts/i);
+  });
+
+  it("without arg: calls pickPendingGate (TUI path)", async () => {
+    const mock = pickPendingGate as unknown as ReturnType<typeof vi.fn>;
+    mock.mockResolvedValue("problem_defined");
+    setup(STATUS_WITH_FEATURE(), SPEC_WITH_SECTION_2_FILLED);
+    await attestCommand(tmp, {}); // no gateKey
+    expect(mock).toHaveBeenCalledTimes(1);
+    const updated = readFileSync(join(tmp, "project-status.md"), "utf-8");
+    expect(updated).toContain("problem_defined: yes");
+  });
+
+  it("emits 'N gates remaining in Phase X' after successful attest", async () => {
+    setup(STATUS_WITH_FEATURE(), SPEC_WITH_SECTION_2_FILLED);
+    const logs: string[] = [];
+    const origLog = console.log;
+    console.log = (...args: unknown[]) => { logs.push(args.map(String).join(" ")); };
+    try {
+      await attestCommand(tmp, { gateKey: "problem_defined" });
+    } finally {
+      console.log = origLog;
+    }
+    const joined = logs.join("\n");
+    expect(joined).toMatch(/9 gates remaining in Phase 10/);
+  });
+
+  it("5-rule error on failed validation has 'next:' block", async () => {
+    setup(STATUS_WITH_FEATURE(), SPEC_WITH_SECTION_2_FILLED);
+    try {
+      await attestCommand(tmp, { gateKey: "target_user_clear" });
+      throw new Error("should have thrown");
+    } catch (e) {
+      // MatilhaUserError exposes .matilhaError with 5 rule fields
+      const { MatilhaUserError } = await import("../../src/ui/errorFormat");
+      expect(e).toBeInstanceOf(MatilhaUserError);
+      const me = (e as InstanceType<typeof MatilhaUserError>).matilhaError;
+      expect(me.summary).toMatch(/spec section is incomplete/i);
+      expect(me.nextActions.length).toBeGreaterThan(0);
+      expect(me.example).toBeDefined();
+    }
   });
 });

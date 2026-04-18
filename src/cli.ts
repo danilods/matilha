@@ -100,16 +100,19 @@ program
   });
 
 program
-  .command("attest <gateKey>")
-  .description("Attest a phase gate after the corresponding spec section is filled")
+  .command("attest [gateKey]")
+  .description("Attest a phase gate (interactive if gateKey omitted)")
   .option("--feature <slug>", "feature name if multiple artifacts")
   .option("--force", "override validation failure", false)
-  .action(async (gateKey: string, opts: { feature?: string; force: boolean }) => {
+  .action(async (gateKey: string | undefined, opts: { feature?: string; force: boolean }) => {
     try {
-      await attestCommand(process.cwd(), gateKey, { feature: opts.feature, force: opts.force });
+      await attestCommand(process.cwd(), {
+        gateKey,
+        feature: opts.feature,
+        force: opts.force
+      });
     } catch (err) {
-      console.error(err instanceof Error ? err.message : String(err));
-      process.exitCode = 1;
+      handleCommandError(err, "running 'matilha attest'");
     }
   });
 
