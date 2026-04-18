@@ -75,8 +75,7 @@ program
     try {
       await scoutCommand(process.cwd());
     } catch (err) {
-      console.error(err instanceof Error ? err.message : String(err));
-      process.exitCode = 1;
+      handleCommandError(err, "running 'matilha scout'");
     }
   });
 
