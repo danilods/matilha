@@ -43,6 +43,35 @@ Agentic methodology plugin + CLI for Claude Code, Cursor, Codex, and Gemini CLI.
 - 153 tests passing
 - New deps: `yaml`, `picocolors`
 
+## What's in Wave 2d
+
+- `matilha plan <slug>` scaffolds spec+plan from registry templates (BMAD-compatible PRD shape). No superpowers required.
+  - `--import-research <file.md>` imports a deep-research markdown (Gemini/Claude) as Section 1 foundational context, wrapped in `<!-- MATILHA_RESEARCH_START/END -->` markers
+  - `--archetype`, `--dry-run`, `--force` flags
+  - Always writes to `docs/matilha/specs/` + `docs/matilha/plans/` regardless of superpowers detection; `owned_by` in feature_artifact distinguishes authorship
+- `matilha attest <gate-key>` validates a spec section is filled (≥30 words, no placeholder markers, RF-001/RNF-001 patterns where required) and flips the gate to `yes`
+  - Auto-advances `current_phase` when all gates in phase complete
+  - `--force` override logs to `pending_decisions`
+- `matilha plan-status` lists feature artifacts with phase gate state; `--json` for scripting
+- Phase 10 has 10 gates (match fidelity to `methodology/10-prd.md`): problem_defined, target_user_clear, rfs_enumerated, rnfs_covered, risks_listed, premissas_listed, success_metrics_defined, aha_moment_identified, scope_boundaries_locked, peer_review_done
+- Phase 20 has 6 gates (stack table, arch doc, RNF traceability, docker-compose, env.example, versions pinned)
+- Phase 30 has 5 gates (CLAUDE.md, skills-by-domain, skills-by-tech, agents-with-models, one-blocking-hook)
+- ~204 tests passing (+51 since Wave 2c)
+
+### Typical pipeline
+
+```
+matilha init                                    # bootstrap project
+matilha scout                                   # Phase 00 discovery (advances phase 0 → 10)
+matilha plan my-feature --import-research research.md  # Phase 10 scaffold with deep research
+# (open spec in IDE + AI agent to fill sections 2-12)
+matilha attest problem_defined                  # validate + flip gate
+matilha attest target_user_clear                # ...
+# (when all 10 phase 10 gates flip to yes, auto-advance to phase 20)
+matilha plan-status                             # check state anytime
+matilha howl                                    # project-level status
+```
+
 ## Try the CLI locally
 
 ```
