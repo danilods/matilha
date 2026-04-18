@@ -71,12 +71,14 @@ export class RegistryClient {
   /**
    * Fetch a template file by logical name.
    */
-  async pullTemplate(name: "claude" | "agents" | "project-status" | "design-spec"): Promise<string> {
+  async pullTemplate(name: "claude" | "agents" | "project-status" | "design-spec" | "spec" | "plan"): Promise<string> {
     const fileNameMap = {
       claude: "CLAUDE.md.tmpl",
       agents: "AGENTS.md.tmpl",
       "project-status": "project-status.md.tmpl",
-      "design-spec": "design-spec.md.tmpl"
+      "design-spec": "design-spec.md.tmpl",
+      spec: "spec.md.tmpl",
+      plan: "plan.md.tmpl"
     };
     return await this.pullRaw(`templates/${fileNameMap[name]}`);
   }
