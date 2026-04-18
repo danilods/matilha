@@ -8,6 +8,7 @@ import { scoutCommand } from "./scout/scoutCommand";
 import { planCommand } from "./plan/planCommand";
 import { attestCommand } from "./plan/attestCommand";
 import { statusCommand } from "./plan/statusCommand";
+import { handleCommandError } from "./ui/handleCommandError";
 
 const program = new Command();
 
@@ -69,8 +70,7 @@ program
     try {
       await howlCommand(process.cwd(), { json: opts.json });
     } catch (err) {
-      console.error(err instanceof Error ? err.message : String(err));
-      process.exitCode = 1;
+      handleCommandError(err, "running 'matilha howl'");
     }
   });
 
