@@ -95,6 +95,24 @@ describe("renderKickoff", () => {
     });
     expect(out).toContain("wave-07");
   });
+
+  it("renders _(none)_ when sp.tests is empty", () => {
+    const out = renderKickoff(TEMPLATE, {
+      feature_slug: "f", wave_num: 1, wave_id: "w1",
+      sp: { ...sampleSP, tests: [] },
+      worktree_path: "x", branch_name: "b", main_repo_path: "r", superpowers_detected: false
+    });
+    expect(out).toContain("_(none)_");
+  });
+
+  it("does not reinject mustache patterns from substituted values", () => {
+    const out = renderKickoff(TEMPLATE, {
+      feature_slug: "f", wave_num: 1, wave_id: "w1",
+      sp: { ...sampleSP, description: "mentions {{sp_id}} literally" },
+      worktree_path: "x", branch_name: "b", main_repo_path: "r", superpowers_detected: false
+    });
+    expect(out).toContain("mentions {{sp_id}} literally");
+  });
 });
 
 describe("renderSPDone", () => {

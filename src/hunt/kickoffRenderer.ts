@@ -25,11 +25,13 @@ function renderBullets(items: string[]): string {
 }
 
 function substituteMustache(template: string, values: Record<string, string>): string {
-  let out = template;
-  for (const [key, val] of Object.entries(values)) {
-    out = out.replace(new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, "g"), val);
-  }
-  return out;
+  return template.replace(/\{\{\s*([a-z_]+)\s*\}\}/g, (match, key: string) => {
+    if (Object.prototype.hasOwnProperty.call(values, key)) {
+      const val = values[key];
+      if (typeof val === "string") return val;
+    }
+    return match;
+  });
 }
 
 function resolveConditionals(template: string, flag: boolean, key: string): string {
