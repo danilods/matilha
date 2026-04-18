@@ -1,4 +1,5 @@
 import pc from "picocolors";
+import { REGISTRY_REPO } from "../config";
 import type { RegistryClient } from "../registry/registryClient";
 import { printMiniBanner } from "../ui/banner";
 
@@ -53,7 +54,7 @@ export async function listCommand(opts: ListOptions): Promise<void> {
     console.log("");
   }
 
-  console.log(pc.dim("pulled from github.com/danilods/matilha-skills@main"));
+  console.log(pc.dim(`pulled from github.com/${REGISTRY_REPO}@main`));
   console.log("");
   console.log(pc.bold("next:"));
   console.log(`  matilha pull <slug>   fetch resource to stdout`);
