@@ -2,6 +2,7 @@ import { Command } from "commander";
 import { VERSION } from "./index";
 import { printBanner } from "./ui/banner";
 import { RegistryClient } from "./registry";
+import { initProject, printInitReport } from "./init/initProject";
 
 const program = new Command();
 
@@ -48,11 +49,11 @@ program
 
 program
   .command("init")
-  .description("Bootstrap a Matilha project (full implementation in Wave 2)")
-  .action(() => {
-    printBanner();
-    console.log("`matilha init` scaffolding comes in Wave 2.");
-    console.log("For now, use the plugin installed via marketplace and run /scout.");
+  .description("Bootstrap a Matilha project")
+  .option("--dry-run", "preview writes without touching disk", false)
+  .action(async (opts: { dryRun: boolean }) => {
+    const result = await initProject(process.cwd(), { dryRun: opts.dryRun });
+    printInitReport(result);
   });
 
 program.parse(process.argv);

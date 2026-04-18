@@ -32,10 +32,10 @@ describe("CLI integration", () => {
     expect(output).toContain("init");
   });
 
-  it("init prints coming-soon message", () => {
-    const output = execFileSync("node", [cliPath, "init"], {
+  it("init command is present in help", () => {
+    const output = execFileSync("node", [cliPath, "--help"], {
       encoding: "utf-8"
     });
-    expect(output).toContain("Wave 2");
+    expect(output).toContain("init");
   });
 });
