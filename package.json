@@ -43,6 +43,7 @@
     "lint": "tsc --noEmit && vitest run"
   },
   "dependencies": {
+    "@clack/prompts": "^1.2.0",
     "commander": "^12.1.0",
     "zod": "^3.23.8"
   },
