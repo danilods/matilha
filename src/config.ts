@@ -38,3 +38,38 @@ export const AESTHETIC_DIRECTIONS = [
   "minimal",
   "maximalist"
 ] as const;
+
+export const PHASE_GATE_KEYS = {
+  10: [
+    "problem_defined",
+    "target_user_clear",
+    "rfs_enumerated",
+    "rnfs_covered",
+    "risks_listed",
+    "premissas_listed",
+    "success_metrics_defined",
+    "aha_moment_identified",
+    "scope_boundaries_locked",
+    "peer_review_done"
+  ],
+  20: [
+    "stack_table_declared",
+    "architecture_doc_exists",
+    "rnf_traceability",
+    "docker_compose_mirrors_prod",
+    "env_example_created",
+    "versions_pinned"
+  ],
+  30: [
+    "claude_md_declares_stack_rules",
+    "skills_by_domain",
+    "skills_by_key_tech",
+    "agents_with_models",
+    "one_blocking_hook"
+  ]
+} as const satisfies Record<10 | 20 | 30, readonly string[]>;
+
+export const MIN_WORDS_PER_SECTION = 30;
+export const PLACEHOLDER_SENTINEL_RE = /\[placeholder\]|<!--\s*TODO/i;
+export const RF_PATTERN = /^- RF-\d{3}/m;
+export const RNF_PATTERN = /^- RNF-\d{3}/m;
