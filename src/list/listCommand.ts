@@ -1,7 +1,7 @@
-import pc from "picocolors";
 import { REGISTRY_REPO } from "../config";
 import type { RegistryClient } from "../registry/registryClient";
 import { printMiniBanner } from "../ui/banner";
+import { colors } from "../ui/colors";
 
 export type ListOptions = {
   client: RegistryClient;
@@ -30,10 +30,11 @@ export async function listCommand(opts: ListOptions): Promise<void> {
     return;
   }
 
+  const c = colors();
   printMiniBanner("matilha list", "registry index");
 
   if (entries.length === 0) {
-    console.log(pc.dim("registry is empty (not yet populated)."));
+    console.log(c.dim("registry is empty (not yet populated)."));
     return;
   }
 
@@ -47,15 +48,15 @@ export async function listCommand(opts: ListOptions): Promise<void> {
   for (const cat of ["Methodology", "Concepts", "Skills"] as const) {
     const list = groups[cat];
     if (list.length === 0) continue;
-    console.log(pc.bold(`${cat} (${list.length}):`));
+    console.log(c.bold(`${cat} (${list.length}):`));
     for (const e of list) {
-      console.log(`  ${e.slug.padEnd(40)}${pc.dim(e.name)}`);
+      console.log(`  ${e.slug.padEnd(40)}${c.dim(e.name)}`);
     }
     console.log("");
   }
 
-  console.log(pc.dim(`pulled from github.com/${REGISTRY_REPO}@main`));
+  console.log(c.dim(`pulled from github.com/${REGISTRY_REPO}@main`));
   console.log("");
-  console.log(pc.bold("next:"));
+  console.log(c.bold("next:"));
   console.log(`  matilha pull <slug>   fetch resource to stdout`);
 }
