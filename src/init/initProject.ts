@@ -51,8 +51,8 @@ export async function initProject(cwd: string, opts: InitOptions = {}): Promise<
 
   // Phase 1: discovery
   s.section("phase 1 / 4 — discovery");
-  s.step("detecting tools").ok();
   const tools = detectTools(cwd);
+  s.step("detecting tools").ok();
   const existing = existsSync(join(cwd, "project-status.md"));
   s.step("checking existing init")[existing ? "warn" : "ok"](existing ? "project-status.md exists" : "no project-status.md found");
   const inputs = await askInputs(tools, existing);
@@ -131,8 +131,4 @@ export async function initProject(cwd: string, opts: InitOptions = {}): Promise<
     writtenSkills,
     durationMs
   };
-}
-
-export function printInitReport(_result: InitResult): void {
-  // No longer used; streaming output is emitted during initProject()
 }
