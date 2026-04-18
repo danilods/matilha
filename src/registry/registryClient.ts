@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { REGISTRY_INDEX_URL, REGISTRY_RAW_BASE } from "../config";
+import { companionsFileSchema, type CompanionsFile } from "../domain/companionSchema";
 
 const registryEntrySchema = z.object({
   slug: z.string().regex(/^[a-z0-9](?:[a-z0-9-_]*[a-z0-9])?$/),
@@ -50,5 +51,48 @@ export class RegistryClient {
       );
     }
     return await response.text();
+  }
+
+  /**
+   * Fetch arbitrary raw file from the registry by path relative to repo root.
+   * Used for templates, companions.json, or any non-skill asset.
+   */
+  async pullRaw(relativePath: string): Promise<string> {
+    const url = `${this.rawBase}/${relativePath}`;
+    const response = await this.fetcher(url);
+    if (!response.ok) {
+      throw new Error(
+        `Registry raw fetch failed: ${response.status} for ${relativePath}`
+      );
+    }
+    return await response.text();
+  }
+
+  /**
+   * Fetch a template file by logical name.
+   */
+  async pullTemplate(name: "claude" | "agents" | "project-status" | "design-spec"): Promise<string> {
+    const fileNameMap = {
+      claude: "CLAUDE.md.tmpl",
+      agents: "AGENTS.md.tmpl",
+      "project-status": "project-status.md.tmpl",
+      "design-spec": "design-spec.md.tmpl"
+    };
+    return await this.pullRaw(`templates/${fileNameMap[name]}`);
+  }
+
+  /**
+   * Fetch and parse companions.json, validating shape via Zod.
+   */
+  async pullCompanions(): Promise<CompanionsFile> {
+    const raw = await this.pullRaw("companions.json");
+    const parsed = JSON.parse(raw);
+    const result = companionsFileSchema.safeParse(parsed);
+    if (!result.success) {
+      throw new Error(
+        `companions.json invalid: ${JSON.stringify(result.error.issues)}`
+      );
+    }
+    return result.data;
   }
 }
