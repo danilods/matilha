@@ -24,9 +24,9 @@ function transformLine(line: string): string {
   // Obsidian highlight syntax → bold (not in code)
   let transformed = line.replace(/==([^=]+)==/g, "**$1**");
 
-  // Wikilinks: [[target]] or [[target|label]]
+  // Wikilinks: [[target]] or [[target|label]] or [[target\|label]] (Obsidian table form)
   transformed = transformed.replace(
-    /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g,
+    /\[\[([^\]|\\]+)(?:\\?\|([^\]]+))?\]\]/g,
     (_match, target: string, label: string | undefined) => {
       const labelOrTarget = label ?? target;
 

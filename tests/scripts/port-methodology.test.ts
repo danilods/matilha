@@ -85,4 +85,16 @@ describe("transformWikilinks", () => {
     const output = transformWikilinks(input);
     expect(output).toBe("See [materializacoes](./materializacoes.md).");
   });
+
+  it("handles Obsidian table escaped pipe in wikilink", () => {
+    const input = "| [[10-prd\\|PRD]] | Product Requirements |";
+    const output = transformWikilinks(input);
+    expect(output).toBe("| [PRD](./10-prd.md) | Product Requirements |");
+  });
+
+  it("handles Obsidian table escaped pipe for concept links", () => {
+    const input = "See [[harness-engineering\\|harness]] for context.";
+    const output = transformWikilinks(input);
+    expect(output).toBe("See [harness](../concepts/harness-engineering.md) for context.");
+  });
 });
