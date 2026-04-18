@@ -4,6 +4,7 @@ import { printBanner } from "./ui/banner";
 import { RegistryClient } from "./registry";
 import { initProject, printInitReport } from "./init/initProject";
 import { howlCommand } from "./howl/howlCommand";
+import { scoutCommand } from "./scout/scoutCommand";
 
 const program = new Command();
 
@@ -64,6 +65,18 @@ program
   .action(async (opts: { json: boolean }) => {
     try {
       await howlCommand(process.cwd(), { json: opts.json });
+    } catch (err) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exitCode = 1;
+    }
+  });
+
+program
+  .command("scout")
+  .description("Run Phase 00 discovery — map the problem before any code")
+  .action(async () => {
+    try {
+      await scoutCommand(process.cwd());
     } catch (err) {
       console.error(err instanceof Error ? err.message : String(err));
       process.exitCode = 1;
