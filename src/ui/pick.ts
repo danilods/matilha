@@ -1,4 +1,4 @@
-import { select, isCancel } from "@clack/prompts";
+import { select, isCancel, type Option } from "@clack/prompts";
 
 export type PickOption<T> = {
   value: T;
@@ -50,7 +50,7 @@ export async function pick<T>(args: PickArgs<T>): Promise<T> {
 
   const selected = await select({
     message: fullMessage,
-    options: flat as unknown as Array<{ value: T; label: string; hint?: string }>
+    options: flat as unknown as Option<T>[]
   });
 
   if (isCancel(selected)) {

@@ -71,8 +71,6 @@ export async function statusCommand(cwd: string, opts: StatusOptions = {}): Prom
         | "phase_10_gates" | "phase_20_gates" | "phase_30_gates";
       const gates = (s[gatesKey] as GateMap | undefined) ?? {};
       const required = PHASE_GATE_KEYS[phase];
-      if (required.length === 0) continue;
-
       const done = required.filter((k) => gates[k] === "yes").length;
       const total = required.length;
       const startedLabel = done === 0 && s.current_phase < phase ? "not started" : "";

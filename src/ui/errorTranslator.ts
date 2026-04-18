@@ -13,6 +13,17 @@ function fieldPath(path: (string | number)[]): string {
 
 export function translateZodError(err: ZodError, ctx: TranslationCtx): MatilhaError {
   const first = err.issues[0];
+  if (!first) {
+    return {
+      summary: `${ctx.file ?? "input"} failed validation`,
+      context: ctx.context,
+      problem: err.message || "zod reported no issue details.",
+      nextActions: [
+        `open ${ctx.file ?? "the file"} and compare against the template`,
+        "re-run with --debug to see the raw zod error"
+      ]
+    };
+  }
   const field = fieldPath(first.path);
   const summary =
     first.code === "invalid_type" && (first as { received?: string }).received === "undefined"
