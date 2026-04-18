@@ -2,7 +2,7 @@ import { Command } from "commander";
 import { VERSION } from "./index";
 import { printBanner } from "./ui/banner";
 import { RegistryClient } from "./registry";
-import { initProject, printInitReport } from "./init/initProject";
+import { initProject } from "./init/initProject";
 import { howlCommand } from "./howl/howlCommand";
 import { scoutCommand } from "./scout/scoutCommand";
 import { planCommand } from "./plan/planCommand";
@@ -49,8 +49,11 @@ program
   .description("Bootstrap a Matilha project")
   .option("--dry-run", "preview writes without touching disk", false)
   .action(async (opts: { dryRun: boolean }) => {
-    const result = await initProject(process.cwd(), { dryRun: opts.dryRun });
-    printInitReport(result);
+    try {
+      await initProject(process.cwd(), { dryRun: opts.dryRun });
+    } catch (err) {
+      handleCommandError(err, "running 'matilha init'");
+    }
   });
 
 program
@@ -116,12 +119,12 @@ program
   .description("Show feature artifacts + phase gates state")
   .option("--feature <slug>", "scope to one feature")
   .option("--json", "machine-readable output", false)
-  .action(async (opts: { feature?: string; json: boolean }) => {
+  .option("--all", "show all gates (no truncation)", false)
+  .action(async (opts: { feature?: string; json: boolean; all: boolean }) => {
     try {
-      await statusCommand(process.cwd(), { feature: opts.feature, json: opts.json });
+      await statusCommand(process.cwd(), { feature: opts.feature, json: opts.json, all: opts.all });
     } catch (err) {
-      console.error(err instanceof Error ? err.message : String(err));
-      process.exitCode = 1;
+      handleCommandError(err, "running 'matilha plan-status'");
     }
   });
 

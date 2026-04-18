@@ -105,3 +105,69 @@ describe("statusCommand", () => {
     await expect(statusCommand(tmp, { feature: "nonexistent" })).rejects.toThrow(/not found/i);
   });
 });
+
+describe("statusCommand Wave 2f output", () => {
+  let tmp: string;
+  let logs: string[];
+  let logSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    tmp = mkdtempSync(join(tmpdir(), "status-v2-"));
+    logs = [];
+    logSpy = vi.spyOn(console, "log").mockImplementation((msg: unknown) => {
+      logs.push(typeof msg === "string" ? msg : JSON.stringify(msg));
+    });
+  });
+
+  afterEach(() => {
+    rmSync(tmp, { recursive: true, force: true });
+    logSpy.mockRestore();
+  });
+
+  it("renders gates with [yes] / [pending] text labels", async () => {
+    writeFileSync(join(tmp, "project-status.md"), STATUS_WITH_FEATURE);
+    await statusCommand(tmp, {});
+    const out = logs.join("\n");
+    expect(out).toContain("[yes]");
+    expect(out).toContain("[pending]");
+  });
+
+  it("shows 'N of M done' per phase heading", async () => {
+    writeFileSync(join(tmp, "project-status.md"), STATUS_WITH_FEATURE);
+    await statusCommand(tmp, {});
+    const out = logs.join("\n");
+    // fixture has 1 yes + 9 pending in phase 10
+    expect(out).toMatch(/1 of 10 done/);
+  });
+
+  it("truncates non-current phase gates to 4 visible when --all not set", async () => {
+    writeFileSync(join(tmp, "project-status.md"), STATUS_WITH_FEATURE);
+    await statusCommand(tmp, {});
+    const out = logs.join("\n");
+    // phase 20 is NOT the current phase and has >4 gates → expect truncation marker
+    expect(out).toMatch(/more; use --all to see/);
+  });
+
+  it("--all shows every gate (no truncation marker)", async () => {
+    writeFileSync(join(tmp, "project-status.md"), STATUS_WITH_FEATURE);
+    await statusCommand(tmp, { all: true });
+    const out = logs.join("\n");
+    expect(out).not.toMatch(/more; use --all to see/);
+  });
+
+  it("emits bookend with 'matilha attest' next action when gates pending", async () => {
+    writeFileSync(join(tmp, "project-status.md"), STATUS_WITH_FEATURE);
+    await statusCommand(tmp, {});
+    const out = logs.join("\n");
+    expect(out).toContain("next:");
+    expect(out).toContain("matilha attest");
+  });
+
+  it("empty feature_artifacts triggers 'scaffold your first feature' bookend", async () => {
+    writeFileSync(join(tmp, "project-status.md"), STATUS_NO_FEATURES);
+    await statusCommand(tmp, {});
+    const out = logs.join("\n");
+    expect(out).toContain("no feature artifacts yet");
+    expect(out).toContain("matilha plan <slug>");
+  });
+});
