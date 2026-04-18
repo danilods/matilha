@@ -10,6 +10,7 @@ import { attestCommand } from "./plan/attestCommand";
 import { statusCommand } from "./plan/statusCommand";
 import { handleCommandError } from "./ui/handleCommandError";
 import { listCommand } from "./list/listCommand";
+import { pullCommand } from "./pull/pullCommand";
 
 const program = new Command();
 
@@ -33,15 +34,13 @@ program
 
 program
   .command("pull <slug>")
-  .description("Pull a skill from the registry (print to stdout in Wave 1)")
+  .description("Pull a resource from the registry to stdout")
   .action(async (slug: string) => {
-    const client = new RegistryClient();
     try {
-      const content = await client.pull(slug);
-      console.log(content);
+      const client = new RegistryClient();
+      await pullCommand({ client, slug });
     } catch (err) {
-      console.error(`Failed to pull ${slug}: ${(err as Error).message}`);
-      process.exitCode = 1;
+      handleCommandError(err, "running 'matilha pull'");
     }
   });
 
@@ -94,8 +93,7 @@ program
         force: opts.force
       });
     } catch (err) {
-      console.error(err instanceof Error ? err.message : String(err));
-      process.exitCode = 1;
+      handleCommandError(err, "running 'matilha plan'");
     }
   });
 
