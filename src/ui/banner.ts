@@ -1,3 +1,5 @@
+import { colors } from "./colors";
+
 export const MATILHA_BANNER = `
 ███╗   ███╗ █████╗ ████████╗██╗██╗     ██╗  ██╗ █████╗
 ████╗ ████║██╔══██╗╚══██╔══╝██║██║     ██║  ██║██╔══██╗
@@ -11,4 +13,11 @@ Humanos lideram. Agentes caçam.
 
 export function printBanner(): void {
   console.log(MATILHA_BANNER);
+}
+
+export function printMiniBanner(command: string, context: string): void {
+  const c = colors();
+  console.log("");
+  console.log(c.bold(c.cyan(command)) + c.dim(` — ${context}`));
+  console.log("");
 }
