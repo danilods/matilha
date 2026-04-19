@@ -149,6 +149,30 @@ worktree (with or without superpowers) does the actual work. `/gather`
 errors, soft-strict plan parser, Swiss Cheese pre-flight (4 gates before
 any mutation), `NO_COLOR` respected.
 
+## Wave 3b — `/gather` runtime (2026-04-19)
+
+`matilha gather <feature-slug>` — Phase 40 wave merge + regression.
+
+Reads `docs/matilha/waves/wave-NN-status.md`, validates each SP's
+`SP-DONE.md` against strict completion gates, merges every SP branch
+into the current integration branch in the declared `merge_order`
+(`git merge --no-ff`), runs `npm test` after every merge to localize
+regressions, and updates the wave-status file with per-SP +
+overall state.
+
+**Scaffolder, not orchestrator.** /gather does not invoke /review, does
+not advance `current_phase`, does not tag. On any failure, it HALTS
+and preserves state — Matilha never rolls back on the user's behalf.
+
+**Flags:**
+- `--wave <N>` — explicit wave number (default: 1)
+- `--dry-run` — validate SP-DONE gates + print merge plan, no mutation
+- `--cleanup` — after wave success, remove worktrees + delete merged branches (opt-in)
+
+**SP-DONE gates (strict):** `status=completed`, `tests.passed=true`,
+non-empty `commits[]`, non-null `completed_at`, `tests.count >= 1`,
+and `sp_id` / `feature` / `wave` must match the gather target.
+
 ## License
 
 MIT © Danilo de Sousa
