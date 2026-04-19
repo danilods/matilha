@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { z } from "zod";
+import { parse as parseYaml } from "yaml";
 
 // Resolves to ~/Documents/Projetos/matilha-skills/ if present (dev mode).
 // When running in CI or without skills repo side-by-side, these tests skip.
@@ -92,4 +93,55 @@ describe.skipIf(!skillsRepoExists)("matilha-skills content validation", () => {
       expect(existsSync(p), `${file} not found`).toBe(true);
     }
   });
+});
+
+// Wave 4a additions — skill frontmatter schema + description linter
+
+const skillFrontmatterSchema = z.object({
+  name: z.string().regex(/^[a-z][a-z0-9-]*[a-z0-9]$/),
+  description: z.string().min(1).max(300),
+  category: z.enum(["matilha", "ux", "growth", "design", "security", "harness", "cog"]),
+  version: z.string().regex(/^\d+\.\d+\.\d+$/).optional(),
+  requires: z.array(z.string()).optional(),
+  optional_companions: z.array(z.string()).optional()
+});
+
+function loadSkillFrontmatter(skillDir: string): unknown {
+  const content = readFileSync(resolve(SKILLS_REPO, "skills", skillDir, "SKILL.md"), "utf-8");
+  const match = content.match(/^---\n([\s\S]*?)\n---/);
+  if (!match) throw new Error(`${skillDir}: SKILL.md has no frontmatter`);
+  return parseYaml(match[1]!);
+}
+
+function listSkills(): string[] {
+  if (!skillsRepoExists) return [];
+  return readdirSync(resolve(SKILLS_REPO, "skills")).filter((d) => !d.startsWith("."));
+}
+
+describe.skipIf(!skillsRepoExists)("skill frontmatter schema (Wave 4a)", () => {
+  for (const skillDir of listSkills()) {
+    it(`${skillDir}: frontmatter validates against skillFrontmatterSchema`, () => {
+      const fm = loadSkillFrontmatter(skillDir);
+      const result = skillFrontmatterSchema.safeParse(fm);
+      if (!result.success) {
+        const issues = result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
+        throw new Error(`${skillDir} frontmatter invalid: ${issues}`);
+      }
+    });
+
+    it(`${skillDir}: frontmatter name matches directory name`, () => {
+      const fm = loadSkillFrontmatter(skillDir) as { name: string };
+      expect(fm.name).toBe(skillDir);
+    });
+  }
+});
+
+describe.skipIf(!skillsRepoExists)("skill description linter (Wave 4a)", () => {
+  for (const skillDir of listSkills()) {
+    it(`${skillDir}: description starts with "Use when" or "When"`, () => {
+      const fm = loadSkillFrontmatter(skillDir) as { description: string };
+      const ok = /^Use when |^When /.test(fm.description);
+      expect(ok, `${skillDir} description does not start with "Use when" or "When": ${fm.description}`).toBe(true);
+    });
+  }
 });
