@@ -1,10 +1,29 @@
-# Matilha
+# Matilha — CLI
 
-> Humanos lideram. Agentes caçam.
+> **You lead. Agents hunt.**
+> A harness for building complex projects with AI.
 
-Agentic methodology plugin + CLI for Claude Code, Cursor, Codex, and Gemini CLI.
+The TypeScript CLI encarnation of Matilha. Deterministic engine for CI, automation, and power-user workflows. For a zero-install experience inside AI coding tools, see the plugin below.
 
-**Status:** v0.1 — Wave 1 complete (CLI skeleton). Not yet published to marketplaces. Under active development.
+## Install as a plugin (no npm required)
+
+Matilha also ships as a cross-platform plugin for Claude Code, Cursor, Codex CLI, and Gemini CLI. The plugin is self-sufficient — no `npm install` required.
+
+- Repo: [matilha-skills](https://github.com/danilods/matilha-skills)
+- Claude Code: `/plugin install matilha` (via marketplace) or `/plugin install <local path>` during development.
+- Cursor: same `/plugin install` flow.
+- Codex CLI: enable `multi_agent = true` in `~/.codex/config.toml` and point at matilha-skills repo.
+- Gemini CLI: install via `gemini-extension.json` in matilha-skills.
+
+The CLI (below) remains the deterministic engine for CI, power-user automation, and anywhere the plugin path is impractical. Both paths share the same `matilha-skills` registry as the source of truth for methodology content.
+
+## Install the CLI (npm)
+
+```bash
+npm install -g matilha
+```
+
+**Status:** v0.4.0 — Wave 3b shipped (`/hunt` + `/gather` runtimes). 437 tests. Plugin activation shipped in Wave 4a (see [matilha-skills](https://github.com/danilods/matilha-skills)).
 
 ## What's in Wave 1
 
