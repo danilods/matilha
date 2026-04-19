@@ -1,14 +1,13 @@
 // src/hunt/huntCommand.ts
-import { existsSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join, dirname, basename } from "node:path";
 import { parse as parseYaml } from "yaml";
-import { readFileSync } from "node:fs";
 import { MatilhaUserError } from "../ui/errorFormat";
 import { printMiniBanner } from "../ui/banner";
 import { createStream } from "../ui/stream";
 import { RegistryClient } from "../registry/registryClient";
 import { resolvePlanPath } from "./planPathResolver";
-import { parsePlan, type ParsedWave } from "./planParser";
+import { parsePlan, type ParsedWave, type ParsedSP } from "./planParser";
 import { validateDisjunction } from "./disjunctionValidator";
 import {
   branchExists,
@@ -22,7 +21,7 @@ import {
 import { ensureGitignoreEntry } from "./gitignoreUtil";
 import { renderKickoff, renderSPDone } from "./kickoffRenderer";
 import { writeWaveStatus } from "./waveStatusWriter";
-import { PrintDispatcher, type DispatchReport } from "./dispatcher";
+import { PrintDispatcher } from "./dispatcher";
 import type { Wave } from "../domain/waveSchema";
 
 export type HuntOptions = {
@@ -48,6 +47,19 @@ function slugifySP(title: string): string {
 
 function padWave(n: number): string {
   return n.toString().padStart(2, "0");
+}
+
+function spPaths(
+  sp: ParsedSP,
+  waveNum: number,
+  cwd: string,
+  projectName: string
+): { branch: string; wtPath: string } {
+  const slug = slugifySP(sp.title);
+  return {
+    branch: `wave-${padWave(waveNum)}-sp-${slug}`,
+    wtPath: join(dirname(cwd), `${projectName}-sp-${slug}`)
+  };
 }
 
 function pickWave(waves: ParsedWave[], explicit?: number): ParsedWave {
@@ -182,8 +194,7 @@ export async function huntCommand(
   if (opts.dryRun) {
     s.section("dry-run preview");
     for (const sp of wave.sps) {
-      const branch = `wave-${padWave(waveNum)}-sp-${slugifySP(sp.title)}`;
-      const wtPath = join(dirname(cwd), `${status.name}-sp-${slugifySP(sp.title)}`);
+      const { branch, wtPath } = spPaths(sp, waveNum, cwd, status.name);
       s.step(sp.id).dryRun(`branch=${branch}, worktree=${wtPath}`);
     }
     s.step(`wave-${padWave(waveNum)}-status.md`).dryRun(waveStatusPath.replace(cwd + "/", ""));
@@ -195,7 +206,7 @@ export async function huntCommand(
   if (opts.force && existsSync(waveStatusPath)) {
     s.section("recovery info (save this before --force destroys state)");
     for (const sp of wave.sps) {
-      const branch = `wave-${padWave(waveNum)}-sp-${slugifySP(sp.title)}`;
+      const { branch } = spPaths(sp, waveNum, cwd, status.name);
       if (await branchExists(cwd, branch)) {
         const commit = await getCurrentCommit(cwd, branch);
         s.step(`${sp.id} branch`).ok(`${branch} at ${commit}`);
@@ -213,8 +224,7 @@ export async function huntCommand(
 
   const waveEntries: Wave["sps"] = {};
   for (const sp of wave.sps) {
-    const branch = `wave-${padWave(waveNum)}-sp-${slugifySP(sp.title)}`;
-    const wtPath = join(dirname(cwd), `${status.name}-sp-${slugifySP(sp.title)}`);
+    const { branch, wtPath } = spPaths(sp, waveNum, cwd, status.name);
 
     if (opts.force) {
       await removeWorktreeIfExists(cwd, wtPath);
@@ -280,7 +290,6 @@ export async function huntCommand(
   // === Dispatch (PrintDispatcher only in Wave 3a) ===
   s.section("dispatch commands");
   const dispatcher = new PrintDispatcher();
-  const reports: DispatchReport[] = [];
   for (const sp of wave.sps) {
     // waveEntries[sp.id] was assigned in the loop above — safe under strict flag.
     const entry = waveEntries[sp.id]!;
@@ -291,7 +300,6 @@ export async function huntCommand(
       kickoffPath: join(entry.worktree, "kickoff.md"),
       companions: { superpowers: superpowersDetected }
     });
-    reports.push(r);
     s.step(`${sp.id}`).ok(r.command);
   }
 
