@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.3.0] — 2026-04-18 — Wave 3a: /hunt runtime
+
+### Added
+
+- `matilha hunt <slug>` — Phase 40 wave dispatch (worktrees + kickoff + sp-done + wave-status).
+- `src/hunt/` — planPathResolver, planParser, disjunctionValidator, execGit, worktreeCreator, gitignoreUtil, kickoffRenderer, waveStatusWriter, dispatcher (Dispatcher interface + PrintDispatcher), huntCommand orchestrator.
+- `templates/kickoff.md.tmpl` + `templates/sp-done.md.tmpl` in matilha-skills registry.
+- Four new CLI flags: `--wave`, `--dry-run`, `--force`, `--allow-overlap`.
+
+### Changed
+
+- `skills/matilha-hunt/SKILL.md` in matilha-skills: aligned with Wave 3a runtime. Prior reference to `superpowers:dispatching-parallel-agents` (drift from Wave 2a) replaced with `superpowers:executing-plans` (correct engine for worktree-isolated sessions per methodology/40-execucao).
+
+### Internal
+
+- Swiss Cheese pre-flight: 4 gate layers (plan exists → phase ≥ 30 → working tree clean → disjunction valid) before any git mutation.
+- Soft-strict plan parser: accepts em-dash / colon / single-hyphen in SP headings; warns on non-canonical variants.
+- Dispatcher interface: Wave 3a ships `PrintDispatcher`; future `MacTerminalDispatcher` (osascript) plugs in.
+
 ## [0.2.0] — 2026-04-18 — Wave 2f UX Baseline
 
 ### Changed

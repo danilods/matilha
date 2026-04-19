@@ -125,6 +125,30 @@ context-engineering). See:
 
 **Tests:** 204 → ~290.
 
+## Wave 3a — `/hunt` runtime (2026-04-18)
+
+`matilha hunt <feature-slug>` — Phase 40 wave dispatch.
+
+Reads a plan artifact, validates intra-wave file disjunction, creates a git
+worktree per SP with a rendered `kickoff.md` and `SP-DONE.md` template,
+writes `docs/matilha/waves/wave-NN-status.md`, and prints dispatch commands
+for the user to paste in new terminals.
+
+**Scaffolder, not executor.** Matilha creates artifacts; AI in each
+worktree (with or without superpowers) does the actual work. `/gather`
+(Wave 3b) handles merge + regression + cleanup.
+
+**Flags:**
+- `--wave <N>` — explicit wave number (default: first pending)
+- `--dry-run` — preview without mutation
+- `--force` — re-dispatch destructively (logs recovery info first)
+- `--allow-overlap` — bypass disjunction check (merge-conflict risk)
+
+**Accessibility / UX:** applies all 12 principles from
+`wiki/analyses/matilha-ux-foundation.md`. Streaming progress, 5-rule
+errors, soft-strict plan parser, Swiss Cheese pre-flight (4 gates before
+any mutation), `NO_COLOR` respected.
+
 ## License
 
 MIT © Danilo de Sousa
