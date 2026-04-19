@@ -145,3 +145,113 @@ describe.skipIf(!skillsRepoExists)("skill description linter (Wave 4a)", () => {
     });
   }
 });
+
+// Wave 4a additions — plugin manifests + context files + agents + governance docs + tool mapping
+
+const pluginJsonSchema = z.object({
+  name: z.string().min(1),
+  version: z.string().regex(/^\d+\.\d+\.\d+$/),
+  description: z.string().min(10),
+  author: z.object({ name: z.string().min(1) }).or(z.string().min(1)),
+  license: z.string().optional(),
+  keywords: z.array(z.string()).optional(),
+  homepage: z.string().url().optional(),
+  repository: z.string().optional()
+});
+
+const geminiExtensionSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().min(10),
+  version: z.string().regex(/^\d+\.\d+\.\d+$/),
+  contextFileName: z.string().min(1)
+});
+
+const agentFrontmatterSchema = z.object({
+  name: z.string().regex(/^[a-z][a-z0-9-]*[a-z0-9]$/),
+  description: z.string().min(20),
+  tools: z.string().min(1).optional(),
+  color: z.string().optional()
+});
+
+describe.skipIf(!skillsRepoExists)("plugin manifests (Wave 4a)", () => {
+  it(".claude-plugin/plugin.json validates against schema", () => {
+    const raw = readFileSync(resolve(SKILLS_REPO, ".claude-plugin/plugin.json"), "utf-8");
+    const parsed = JSON.parse(raw);
+    expect(pluginJsonSchema.parse(parsed).name).toBe("matilha");
+  });
+
+  it(".claude-plugin/marketplace.json parses as valid JSON", () => {
+    const raw = readFileSync(resolve(SKILLS_REPO, ".claude-plugin/marketplace.json"), "utf-8");
+    expect(() => JSON.parse(raw)).not.toThrow();
+  });
+
+  it("gemini-extension.json validates against schema", () => {
+    const raw = readFileSync(resolve(SKILLS_REPO, "gemini-extension.json"), "utf-8");
+    const parsed = JSON.parse(raw);
+    expect(geminiExtensionSchema.parse(parsed).contextFileName).toBe("GEMINI.md");
+  });
+});
+
+describe.skipIf(!skillsRepoExists)("context files (Wave 4a)", () => {
+  it("CLAUDE.md exists and contains the slogan", () => {
+    const content = readFileSync(resolve(SKILLS_REPO, "CLAUDE.md"), "utf-8");
+    expect(content).toContain("You lead. Agents hunt.");
+  });
+
+  it("GEMINI.md exists and contains the slogan", () => {
+    const content = readFileSync(resolve(SKILLS_REPO, "GEMINI.md"), "utf-8");
+    expect(content).toContain("You lead. Agents hunt.");
+  });
+
+  it("AGENTS.md exists and contains the slogan", () => {
+    const content = readFileSync(resolve(SKILLS_REPO, "AGENTS.md"), "utf-8");
+    expect(content).toContain("You lead. Agents hunt.");
+  });
+});
+
+describe.skipIf(!skillsRepoExists)("agent files (Wave 4a)", () => {
+  const agentDir = resolve(SKILLS_REPO, ".claude-plugin/agents");
+
+  it("matilha-code-architect.md has valid frontmatter", () => {
+    const content = readFileSync(resolve(agentDir, "matilha-code-architect.md"), "utf-8");
+    const match = content.match(/^---\n([\s\S]*?)\n---/);
+    expect(match).not.toBeNull();
+    const fm = parseYaml(match![1]!);
+    expect(agentFrontmatterSchema.parse(fm).name).toBe("matilha-code-architect");
+  });
+
+  it("matilha-plan-reviewer.md has valid frontmatter", () => {
+    const content = readFileSync(resolve(agentDir, "matilha-plan-reviewer.md"), "utf-8");
+    const match = content.match(/^---\n([\s\S]*?)\n---/);
+    expect(match).not.toBeNull();
+    const fm = parseYaml(match![1]!);
+    expect(agentFrontmatterSchema.parse(fm).name).toBe("matilha-plan-reviewer");
+  });
+});
+
+describe.skipIf(!skillsRepoExists)("governance docs (Wave 4a)", () => {
+  const govDocs = [
+    "docs/matilha/companions-contract.md",
+    "docs/matilha/skill-authoring-guide.md",
+    "docs/matilha/naming-conventions.md",
+    "docs/matilha/pack-authors.md",
+    "docs/platform-tool-mapping.md"
+  ];
+  for (const doc of govDocs) {
+    it(`${doc} exists and is non-trivial (> 40 lines)`, () => {
+      const content = readFileSync(resolve(SKILLS_REPO, doc), "utf-8");
+      const lines = content.split("\n").length;
+      expect(lines, `${doc} has only ${lines} lines; expected > 40`).toBeGreaterThan(40);
+    });
+  }
+});
+
+describe.skipIf(!skillsRepoExists)("platform tool mapping completeness (Wave 4a)", () => {
+  it("mentions all required tools", () => {
+    const content = readFileSync(resolve(SKILLS_REPO, "docs/platform-tool-mapping.md"), "utf-8");
+    const required = ["Task", "Skill", "Read", "Write", "Edit", "Bash", "TodoWrite"];
+    for (const tool of required) {
+      expect(content, `platform-tool-mapping.md missing ${tool}`).toContain(tool);
+    }
+  });
+});
