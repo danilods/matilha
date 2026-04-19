@@ -22,6 +22,7 @@ import { ensureGitignoreEntry } from "./gitignoreUtil";
 import { renderKickoff, renderSPDone } from "./kickoffRenderer";
 import { writeWaveStatus } from "./waveStatusWriter";
 import { PrintDispatcher } from "./dispatcher";
+import { slugifySP, padWave } from "./naming";
 import type { Wave } from "../domain/waveSchema";
 
 export type HuntOptions = {
@@ -37,17 +38,6 @@ type ProjectStatusLite = {
   current_phase: number;
   companion_skills: { superpowers: string };
 };
-
-function slugifySP(title: string): string {
-  return title.toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 40);
-}
-
-function padWave(n: number): string {
-  return n.toString().padStart(2, "0");
-}
 
 function spPaths(
   sp: ParsedSP,

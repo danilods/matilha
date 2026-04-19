@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.4.0] — 2026-04-19 — Wave 3b: /gather runtime
+
+### Added
+
+- `matilha gather <slug>` — Phase 40 wave merge (validate SP-DONE + merge `--no-ff` in merge_order + per-SP regression + wave-status bookkeeping).
+- `src/gather/` — waveStatusReader, spDoneReader, mergeExecutor, cleanupExecutor, waveStatusUpdater, gatherCommand.
+- Three new CLI flags on `gather`: `--wave`, `--dry-run`, `--cleanup`.
+- `src/hunt/naming.ts` — extracted shared `slugifySP` + `padWave` helpers (Wave 3a follow-up).
+
+### Changed
+
+- `skills/matilha-gather/SKILL.md` in matilha-skills: aligned with Wave 3b scaffolder behavior. Prior references to auto-invoking `/review` and advancing `current_phase: 50` (Wave 2a drift) removed. Responsibility split now explicit: /gather = merge + regression bookkeeping; /review = quality (Wave 3c); attest = phase advancement.
+
+### Internal
+
+- Strict SP-DONE.md frontmatter validation via Zod (`spDoneSchema`) with drift detection against expected `sp_id` / `feature` / `wave`.
+- Per-SP regression with injectable test command for integration tests (default: `npm test`).
+- Resume-safe per-SP loop: SPs already at `status: completed` are skipped; SPs at `status: failed` halt until reset manually.
+- HALT (not rollback) on merge conflict or regression failure: `git merge --abort` runs automatically on conflict; state is preserved; 5-rule errors include the exact recovery commands.
+
 ## [0.3.0] — 2026-04-18 — Wave 3a: /hunt runtime
 
 ### Added

@@ -12,6 +12,7 @@ import { handleCommandError } from "./ui/handleCommandError";
 import { listCommand } from "./list/listCommand";
 import { pullCommand } from "./pull/pullCommand";
 import { huntCommand } from "./hunt/huntCommand";
+import { gatherCommand } from "./gather/gatherCommand";
 
 const program = new Command();
 
@@ -148,6 +149,24 @@ program
       });
     } catch (err) {
       handleCommandError(err, "running 'matilha hunt'");
+    }
+  });
+
+program
+  .command("gather <featureSlug>")
+  .description("Phase 40 — merge completed SPs in wave order, run regression, update wave-status")
+  .option("--wave <n>", "explicit wave number", (v) => parseInt(v, 10))
+  .option("--dry-run", "validate SP-DONEs + print merge plan, no mutation", false)
+  .option("--cleanup", "remove worktrees + delete merged branches after success", false)
+  .action(async (featureSlug: string, opts: { wave?: number; dryRun: boolean; cleanup: boolean }) => {
+    try {
+      await gatherCommand(process.cwd(), featureSlug, {
+        wave: opts.wave,
+        dryRun: opts.dryRun,
+        cleanup: opts.cleanup
+      });
+    } catch (err) {
+      handleCommandError(err, "running 'matilha gather'");
     }
   });
 
