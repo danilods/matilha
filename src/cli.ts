@@ -11,6 +11,7 @@ import { statusCommand } from "./plan/statusCommand";
 import { handleCommandError } from "./ui/handleCommandError";
 import { listCommand } from "./list/listCommand";
 import { pullCommand } from "./pull/pullCommand";
+import { huntCommand } from "./hunt/huntCommand";
 
 const program = new Command();
 
@@ -127,6 +128,26 @@ program
       await statusCommand(process.cwd(), { feature: opts.feature, json: opts.json, all: opts.all });
     } catch (err) {
       handleCommandError(err, "running 'matilha plan-status'");
+    }
+  });
+
+program
+  .command("hunt <featureSlug>")
+  .description("Phase 40 — decompose plan into waves, create worktrees, dispatch parallel")
+  .option("--wave <n>", "explicit wave number", (v) => parseInt(v, 10))
+  .option("--dry-run", "preview without touching git", false)
+  .option("--force", "re-dispatch wave (destructive)", false)
+  .option("--allow-overlap", "bypass disjunction validation", false)
+  .action(async (featureSlug: string, opts: { wave?: number; dryRun: boolean; force: boolean; allowOverlap: boolean }) => {
+    try {
+      await huntCommand(process.cwd(), featureSlug, {
+        wave: opts.wave,
+        dryRun: opts.dryRun,
+        force: opts.force,
+        allowOverlap: opts.allowOverlap
+      });
+    } catch (err) {
+      handleCommandError(err, "running 'matilha hunt'");
     }
   });
 
