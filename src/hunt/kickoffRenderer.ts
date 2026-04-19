@@ -1,5 +1,6 @@
 // src/hunt/kickoffRenderer.ts
 import type { ParsedSP } from "./planParser";
+import { padWave } from "./naming";
 
 export type KickoffContext = {
   feature_slug: string;
@@ -11,10 +12,6 @@ export type KickoffContext = {
   main_repo_path: string;
   superpowers_detected: boolean;
 };
-
-function padWave(n: number): string {
-  return n.toString().padStart(2, "0");
-}
 
 function renderChecklist(items: string[]): string {
   return items.map((i) => `- [ ] ${i}`).join("\n");
