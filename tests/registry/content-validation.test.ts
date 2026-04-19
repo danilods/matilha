@@ -255,3 +255,145 @@ describe.skipIf(!skillsRepoExists)("platform tool mapping completeness (Wave 4a)
     }
   });
 });
+
+// Wave 5a additions — matilha-ux-pack validation
+
+const UX_PACK_REPO = resolve(__dirname, "../../../matilha-ux-pack");
+const uxPackExists = existsSync(UX_PACK_REPO);
+
+const packSkillFrontmatterSchema = z.object({
+  name: z.string().regex(/^[a-z][a-z0-9-]*[a-z0-9]$/),
+  description: z.string().min(1).max(300),
+  category: z.enum(["ux", "cog"]),
+  version: z.string().regex(/^\d+\.\d+\.\d+$/),
+  requires: z.array(z.string()).optional(),
+  optional_companions: z.array(z.string()).optional()
+});
+
+function loadUxPackSkillFrontmatter(skillDir: string): unknown {
+  const content = readFileSync(resolve(UX_PACK_REPO, "skills", skillDir, "SKILL.md"), "utf-8");
+  const match = content.match(/^---\n([\s\S]*?)\n---/);
+  if (!match) throw new Error(`${skillDir}: SKILL.md has no frontmatter`);
+  return parseYaml(match[1]!);
+}
+
+function listUxPackSkills(): string[] {
+  if (!uxPackExists) return [];
+  return readdirSync(resolve(UX_PACK_REPO, "skills")).filter((d) => !d.startsWith("."));
+}
+
+function loadUxPackSkillContent(skillDir: string): string {
+  return readFileSync(resolve(UX_PACK_REPO, "skills", skillDir, "SKILL.md"), "utf-8");
+}
+
+function extractUxPackDescriptionWords(skillDir: string): Set<string> {
+  const fm = loadUxPackSkillFrontmatter(skillDir) as { description: string };
+  const stopwords = new Set(["use", "when", "a", "an", "the", "and", "or", "of", "to", "in", "with", "for", "on", "at", "by"]);
+  return new Set(
+    fm.description
+      .toLowerCase()
+      .split(/[\s,.\-—–:;()]+/)
+      .filter((w) => w.length > 2 && !stopwords.has(w))
+  );
+}
+
+describe.skipIf(!uxPackExists)("matilha-ux-pack plugin.json (Wave 5a)", () => {
+  it("plugin.json declares matilha-pack keyword", () => {
+    const raw = readFileSync(resolve(UX_PACK_REPO, ".claude-plugin/plugin.json"), "utf-8");
+    const parsed = JSON.parse(raw) as { keywords?: string[] };
+    expect(parsed.keywords, "pack plugin.json must include 'matilha-pack' in keywords").toContain("matilha-pack");
+  });
+
+  it("plugin.json has valid top-level shape", () => {
+    const raw = readFileSync(resolve(UX_PACK_REPO, ".claude-plugin/plugin.json"), "utf-8");
+    const parsed = JSON.parse(raw) as { name?: string; version?: string; license?: string };
+    expect(parsed.name).toBe("matilha-ux-pack");
+    expect(parsed.version).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(parsed.license).toBe("MIT");
+  });
+
+  it("marketplace.json parses as valid JSON", () => {
+    const raw = readFileSync(resolve(UX_PACK_REPO, ".claude-plugin/marketplace.json"), "utf-8");
+    expect(() => JSON.parse(raw)).not.toThrow();
+  });
+});
+
+describe.skipIf(!uxPackExists)("matilha-ux-pack skill frontmatter (Wave 5a)", () => {
+  for (const skillDir of listUxPackSkills()) {
+    it(`${skillDir}: frontmatter validates against packSkillFrontmatterSchema`, () => {
+      const fm = loadUxPackSkillFrontmatter(skillDir);
+      const result = packSkillFrontmatterSchema.safeParse(fm);
+      if (!result.success) {
+        const issues = result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
+        throw new Error(`${skillDir} frontmatter invalid: ${issues}`);
+      }
+    });
+
+    it(`${skillDir}: frontmatter name matches directory name`, () => {
+      const fm = loadUxPackSkillFrontmatter(skillDir) as { name: string };
+      expect(fm.name).toBe(skillDir);
+    });
+
+    it(`${skillDir}: description starts with "Use when" or "When"`, () => {
+      const fm = loadUxPackSkillFrontmatter(skillDir) as { description: string };
+      const ok = /^Use when |^When /.test(fm.description);
+      expect(ok, `${skillDir} description does not start with "Use when" or "When": ${fm.description}`).toBe(true);
+    });
+
+    it(`${skillDir}: category is ux or cog, matching slug prefix`, () => {
+      const fm = loadUxPackSkillFrontmatter(skillDir) as { category: string };
+      const expectedCategory = skillDir.startsWith("ux-") ? "ux" : "cog";
+      expect(fm.category).toBe(expectedCategory);
+    });
+  }
+});
+
+describe.skipIf(!uxPackExists)("matilha-ux-pack skill body (Wave 5a)", () => {
+  for (const skillDir of listUxPackSkills()) {
+    it(`${skillDir}: body has mandatory ## Sources section`, () => {
+      const content = loadUxPackSkillContent(skillDir);
+      expect(content, `${skillDir} missing ## Sources section`).toContain("## Sources");
+    });
+
+    it(`${skillDir}: Sources section has at least 1 wikilink`, () => {
+      const content = loadUxPackSkillContent(skillDir);
+      const sourcesIdx = content.indexOf("## Sources");
+      expect(sourcesIdx).toBeGreaterThan(-1);
+      const sourcesBody = content.slice(sourcesIdx);
+      const wikilinks = sourcesBody.match(/\[\[[^\]]+\]\]/g) ?? [];
+      expect(wikilinks.length, `${skillDir} has no wikilinks in Sources section`).toBeGreaterThan(0);
+    });
+
+    it(`${skillDir}: body length is 150-500 lines (target 150-300)`, () => {
+      const content = loadUxPackSkillContent(skillDir);
+      const lines = content.split("\n").length;
+      expect(lines, `${skillDir} body is ${lines} lines; expected 150-500`).toBeGreaterThan(149);
+      expect(lines, `${skillDir} body is ${lines} lines; expected 150-500`).toBeLessThan(501);
+    });
+  }
+});
+
+describe.skipIf(!uxPackExists)("matilha-ux-pack activation uniqueness heuristic (Wave 5a)", () => {
+  it("no pair of skills has > 80% description word overlap", () => {
+    const skills = listUxPackSkills();
+    const wordsBySkill = new Map(skills.map((s) => [s, extractUxPackDescriptionWords(s)]));
+    const collisions: string[] = [];
+
+    for (let i = 0; i < skills.length; i++) {
+      for (let j = i + 1; j < skills.length; j++) {
+        const a = skills[i]!;
+        const b = skills[j]!;
+        const aWords = wordsBySkill.get(a)!;
+        const bWords = wordsBySkill.get(b)!;
+        const intersection = new Set([...aWords].filter((w) => bWords.has(w)));
+        const union = new Set([...aWords, ...bWords]);
+        const overlap = union.size > 0 ? intersection.size / union.size : 0;
+        if (overlap > 0.8) {
+          collisions.push(`${a} <> ${b}: ${(overlap * 100).toFixed(1)}%`);
+        }
+      }
+    }
+
+    expect(collisions, `Activation collisions: ${collisions.join(", ")}`).toHaveLength(0);
+  });
+});
