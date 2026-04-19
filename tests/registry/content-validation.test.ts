@@ -40,8 +40,9 @@ describe.skipIf(!skillsRepoExists)("matilha-skills content validation", () => {
 
     for (const entry of Object.values(parsed)) {
       const skillContent = readFileSync(resolve(SKILLS_REPO, entry.skillPath), "utf-8");
-      expect(skillContent, `${entry.slug}: missing MATILHA_MANAGED_START`).toContain("MATILHA_MANAGED_START");
-      expect(skillContent, `${entry.slug}: missing MATILHA_MANAGED_END`).toContain("MATILHA_MANAGED_END");
+      // Wave 4a: MANAGED markers removed. Plugin path is now the source of truth;
+      // skills are complete-rewrite artifacts. Keeping the test harmless (smoke: file readable).
+      expect(skillContent.length, `${entry.slug}: SKILL.md empty`).toBeGreaterThan(100);
     }
   });
 
@@ -49,8 +50,7 @@ describe.skipIf(!skillsRepoExists)("matilha-skills content validation", () => {
     const content = readFileSync(resolve(SKILLS_REPO, "index.json"), "utf-8");
     const parsed = registryIndexSchema.parse(JSON.parse(content));
     const sections = [
-      "## Mission",
-      "## SoR Reference",
+      "## When this fires",
       "## Preconditions",
       "## Execution Workflow",
       "## Rules: Do",
@@ -60,7 +60,8 @@ describe.skipIf(!skillsRepoExists)("matilha-skills content validation", () => {
       "## Companion Integration",
       "## Output Artifacts",
       "## Example Constraint Language",
-      "## Troubleshooting"
+      "## Troubleshooting",
+      "## CLI shortcut (optional)"
     ];
 
     for (const entry of Object.values(parsed)) {
