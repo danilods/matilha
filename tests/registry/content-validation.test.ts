@@ -99,7 +99,9 @@ describe.skipIf(!skillsRepoExists)("matilha-skills content validation", () => {
 
 const skillFrontmatterSchema = z.object({
   name: z.string().regex(/^[a-z][a-z0-9-]*[a-z0-9]$/),
-  description: z.string().min(1).max(300),
+  // Wave 5d: max raised from 300 to 800 to accommodate orchestrator skills
+  // (e.g., matilha-compose) whose description encodes the activation gate contract.
+  description: z.string().min(1).max(800),
   category: z.enum(["matilha", "ux", "growth", "design", "security", "harness", "cog"]),
   version: z.string().regex(/^\d+\.\d+\.\d+$/).optional(),
   requires: z.array(z.string()).optional(),
@@ -136,12 +138,14 @@ describe.skipIf(!skillsRepoExists)("skill frontmatter schema (Wave 4a)", () => {
   }
 });
 
-describe.skipIf(!skillsRepoExists)("skill description linter (Wave 4a)", () => {
+describe.skipIf(!skillsRepoExists)("skill description linter (Wave 4a + 5d)", () => {
   for (const skillDir of listSkills()) {
-    it(`${skillDir}: description starts with "Use when" or "When"`, () => {
+    it(`${skillDir}: description starts with "Use when", "When", or "You MUST"`, () => {
       const fm = loadSkillFrontmatter(skillDir) as { description: string };
-      const ok = /^Use when |^When /.test(fm.description);
-      expect(ok, `${skillDir} description does not start with "Use when" or "When": ${fm.description}`).toBe(true);
+      // Wave 5d: "You MUST use" accepted for orchestrator skills (e.g., matilha-compose)
+      // where activation gate must out-trigger competing third-party skills with MUST-clauses.
+      const ok = /^Use when |^When |^You MUST /.test(fm.description);
+      expect(ok, `${skillDir} description does not start with "Use when", "When", or "You MUST": ${fm.description}`).toBe(true);
     });
   }
 });
