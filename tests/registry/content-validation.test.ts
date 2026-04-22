@@ -717,3 +717,51 @@ describe.skipIf(!harnessPackExists)("matilha-harness-pack overlap disclosure (Wa
     });
   }
 });
+
+// Wave 5d additions — composition layer validation
+
+describe.skipIf(!skillsRepoExists)("matilha-compose skill (Wave 5d)", () => {
+  const composePath = resolve(SKILLS_REPO, "skills/matilha-compose/SKILL.md");
+  const composeExists = existsSync(composePath);
+
+  it("skills/matilha-compose/SKILL.md exists", () => {
+    expect(composeExists).toBe(true);
+  });
+
+  it("frontmatter validates against skillFrontmatterSchema", () => {
+    if (!composeExists) return;
+    const content = readFileSync(composePath, "utf-8");
+    const match = content.match(/^---\n([\s\S]*?)\n---/);
+    expect(match).not.toBeNull();
+    const fm = parseYaml(match![1]!);
+    const result = skillFrontmatterSchema.safeParse(fm);
+    if (!result.success) {
+      const issues = result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
+      throw new Error(`matilha-compose frontmatter invalid: ${issues}`);
+    }
+  });
+
+  it("description contains activation gate: MUST + matilha-project condition", () => {
+    if (!composeExists) return;
+    const content = readFileSync(composePath, "utf-8");
+    const match = content.match(/^---\n([\s\S]*?)\n---/);
+    const fm = parseYaml(match![1]!) as { description: string };
+
+    expect(fm.description, "description missing 'MUST use' imperative").toMatch(/MUST use/i);
+
+    const hasMatilhaSignal =
+      /matilha project/i.test(fm.description) ||
+      /docs\/matilha\//i.test(fm.description) ||
+      /project-status\.md/i.test(fm.description) ||
+      /matilha-\*-pack/i.test(fm.description);
+    expect(hasMatilhaSignal, "description missing matilha-project condition").toBe(true);
+  });
+
+  it("optional_companions includes superpowers:brainstorming", () => {
+    if (!composeExists) return;
+    const content = readFileSync(composePath, "utf-8");
+    const match = content.match(/^---\n([\s\S]*?)\n---/);
+    const fm = parseYaml(match![1]!) as { optional_companions?: string[] };
+    expect(fm.optional_companions).toContain("superpowers:brainstorming");
+  });
+});
