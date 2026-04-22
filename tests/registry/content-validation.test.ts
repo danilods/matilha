@@ -839,3 +839,44 @@ describe.skipIf(!skillsRepoExists)("matilha-compose body (Wave 5d)", () => {
     expect(content).toMatch(/Guidance for the receiving skill/i);
   });
 });
+
+describe.skipIf(!skillsRepoExists)("matilha-plan body (Wave 5d refactor)", () => {
+  const planPath = resolve(SKILLS_REPO, "skills/matilha-plan/SKILL.md");
+
+  it("Execution Workflow step 2 references pack-aware preamble injection", () => {
+    const content = readFileSync(planPath, "utf-8");
+    expect(content).toMatch(/pack-aware/i);
+    expect(content).toMatch(/preamble/i);
+  });
+
+  it("cross-references matilha-compose as canonical template source", () => {
+    const content = readFileSync(planPath, "utf-8");
+    expect(content).toMatch(/matilha-compose/);
+  });
+
+  it("documents fallback: inline clarifying flow when superpowers absent", () => {
+    const content = readFileSync(planPath, "utf-8");
+    expect(content).toMatch(/superpowers.*absent|absent.*superpowers/i);
+  });
+});
+
+describe.skipIf(!skillsRepoExists)("matilha-design body (Wave 5d refactor)", () => {
+  const designPath = resolve(SKILLS_REPO, "skills/matilha-design/SKILL.md");
+
+  it("Execution Workflow contains pack detection step", () => {
+    const content = readFileSync(designPath, "utf-8");
+    expect(content).toMatch(/Pack detection/i);
+    expect(content).toMatch(/matilha-\*-pack/);
+  });
+
+  it("cross-references matilha-compose", () => {
+    const content = readFileSync(designPath, "utf-8");
+    expect(content).toMatch(/matilha-compose/);
+  });
+
+  it("documents fallback: core heuristics when no packs detected", () => {
+    const content = readFileSync(designPath, "utf-8");
+    expect(content).toMatch(/core heuristics/i);
+    expect(content).toMatch(/Krug|recognition|progressive disclosure/i);
+  });
+});
