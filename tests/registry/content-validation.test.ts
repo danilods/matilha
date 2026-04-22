@@ -765,3 +765,73 @@ describe.skipIf(!skillsRepoExists)("matilha-compose skill (Wave 5d)", () => {
     expect(fm.optional_companions).toContain("superpowers:brainstorming");
   });
 });
+
+describe.skipIf(!skillsRepoExists)("matilha-compose body (Wave 5d)", () => {
+  const composePath = resolve(SKILLS_REPO, "skills/matilha-compose/SKILL.md");
+  const composeExists = existsSync(composePath);
+
+  it("body contains Pack awareness section", () => {
+    if (!composeExists) return;
+    const content = readFileSync(composePath, "utf-8");
+    expect(content).toContain("## Pack awareness");
+  });
+
+  it("body contains Fallback semantics section", () => {
+    if (!composeExists) return;
+    const content = readFileSync(composePath, "utf-8");
+    expect(content).toContain("## Fallback semantics");
+  });
+
+  it("body references matilha-*-pack namespace pattern as detection signal", () => {
+    if (!composeExists) return;
+    const content = readFileSync(composePath, "utf-8");
+    expect(content).toMatch(/matilha-\*-pack/);
+  });
+
+  it("body does NOT hardcode pack-specific prefixes in detection instructions", () => {
+    if (!composeExists) return;
+    const content = readFileSync(composePath, "utf-8");
+
+    const lines = content.split("\n");
+    const violations: string[] = [];
+    const prefixPatterns = [/\bharness-\*/, /\bux-\*/, /\bcog-\*/, /\bgrowth-\*/, /\bsecurity-\*/, /\bdesign-\*/];
+    const detectionKeywords = /\b(detect|inspect|match|look for|check for|filter for|scan for)\b/i;
+    const exampleMarkers = /\b(e\.g\.|example|for instance|such as|like|illustration|illustrative)\b/i;
+
+    for (const line of lines) {
+      const hasPrefix = prefixPatterns.some((rx) => rx.test(line));
+      if (!hasPrefix) continue;
+      if (detectionKeywords.test(line) && !exampleMarkers.test(line)) {
+        violations.push(line.trim());
+      }
+    }
+
+    expect(violations, `hardcoded prefix in detection context: ${violations.join(" | ")}`).toHaveLength(0);
+  });
+
+  it("documents Case B (superpowers absent, packs present) fallback", () => {
+    if (!composeExists) return;
+    const content = readFileSync(composePath, "utf-8");
+    expect(content).toMatch(/Case B/);
+    expect(content).toMatch(/superpowers absent/i);
+  });
+
+  it("documents Case C (silent pass-through when zero packs)", () => {
+    if (!composeExists) return;
+    const content = readFileSync(composePath, "utf-8");
+    expect(content).toMatch(/Case C/);
+    expect(content).toMatch(/pass-through|pass through/i);
+  });
+
+  it("documents Case D (both absent) fallback", () => {
+    if (!composeExists) return;
+    const content = readFileSync(composePath, "utf-8");
+    expect(content).toMatch(/Case D/);
+  });
+
+  it("preamble template contains guidance paragraph marker", () => {
+    if (!composeExists) return;
+    const content = readFileSync(composePath, "utf-8");
+    expect(content).toMatch(/Guidance for the receiving skill/i);
+  });
+});
