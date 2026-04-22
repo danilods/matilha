@@ -1,5 +1,26 @@
 # Changelog
 
+## [Wave 5d] — 2026-04-22 — Composition Layer Validator
+
+Extends `tests/registry/content-validation.test.ts` with 18 new tests protecting the Wave 5d composition layer introduced in matilha-skills (matilha-compose gateway + matilha-plan / matilha-design refactors). CLI version stays at 0.4.0 — these are non-breaking validator additions.
+
+### Added
+
+- `matilha-compose skill (Wave 5d)` describe block — 4 tests (file exists, frontmatter schema, description activation gate with MUST + matilha-project condition, optional_companions includes superpowers:brainstorming).
+- `matilha-compose body (Wave 5d)` describe block — 8 tests (Pack awareness section, Fallback semantics section, `matilha-*-pack` namespace reference, no-hardcoded-prefix guard, Cases B/C/D fallback documentation, preamble template guidance marker).
+- `matilha-plan body (Wave 5d refactor)` describe block — 3 tests (pack-aware preamble injection language, matilha-compose cross-reference, superpowers-absent fallback).
+- `matilha-design body (Wave 5d refactor)` describe block — 3 tests (Pack detection step, matilha-compose cross-reference, core-heuristics fallback).
+
+### Changed
+
+- `skill description linter` (Wave 4a → Wave 4a + 5d) — accepts `You MUST` opener in addition to existing `Use when` / `When`. Orchestrator skills need the MUST-imperative to out-trigger third-party MUST-clause skills in activation competition. Matilha-compose is the first such skill.
+- `skillFrontmatterSchema.description` max length raised from 300 to 800 characters. Orchestrator skills encode their full activation gate (conjuncts + condition signals + dispatch behavior) in the description. Content skills still typically stay under 200 chars.
+
+### Test counts
+
+- Pre-Wave-5d baseline: 906 tests (903 passing + 2 pre-existing red on matilha-compose stub description-length and version validators — auto-resolved by Task 3.4 + compose 1.0.0 version).
+- Post-Wave-5d: **924 passing (924)**. Zero regressions.
+
 ## [0.4.0] — 2026-04-19 — Wave 3b: /gather runtime
 
 ### Added
