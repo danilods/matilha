@@ -833,13 +833,28 @@ describe.skipIf(!skillsRepoExists)("matilha-compose body (Wave 5d)", () => {
     expect(content).toMatch(/Case D/);
   });
 
-  it("preamble template contains guidance marker", () => {
+  it("preamble template contains continuation/guidance marker", () => {
     if (!composeExists) return;
     const content = readFileSync(composePath, "utf-8");
-    // Accept either the verbose "Guidance for the receiving skill" form (Wave 5d)
-    // or the compact "Guidance: <instruction>" form (Wave 5d.1 quiet-mode preamble).
-    const hasGuidance = /Guidance for the receiving skill/i.test(content) || /Guidance:/i.test(content);
-    expect(hasGuidance, "preamble missing guidance instruction to receiving skill").toBe(true);
+    // Accepts the evolved preamble forms:
+    // - "Guidance for the receiving skill" (Wave 5d original verbose)
+    // - "Guidance:" (Wave 5d.1 compact italic)
+    // - "Brainstorming adiante" or "Skills entram em cena" (Wave 5d.1 storytelling mode)
+    const hasGuidance =
+      /Guidance for the receiving skill/i.test(content) ||
+      /Guidance:/i.test(content) ||
+      /Brainstorming adiante/i.test(content) ||
+      /Skills entram em cena/i.test(content);
+    expect(hasGuidance, "preamble missing continuation/guidance marker for downstream skill").toBe(true);
+  });
+
+  it("preamble template contains matilha sigil (storytelling mode)", () => {
+    if (!composeExists) return;
+    const content = readFileSync(composePath, "utf-8");
+    // The canonical matilha sigil: alpha wolf with crown (♛) above three pack dogs.
+    // This is the storytelling-mode preamble marker — distinct from pure prose preambles.
+    const hasSigil = /♛/.test(content) && /matilha/i.test(content);
+    expect(hasSigil, "preamble missing matilha sigil (crown ♛ + matilha label)").toBe(true);
   });
 });
 
