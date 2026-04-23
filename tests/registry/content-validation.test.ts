@@ -1270,3 +1270,190 @@ describe.skipIf(!swengPackExists)("matilha-software-eng-pack overlap disclosure 
     });
   }
 });
+
+// Wave 5h additions — matilha-software-arch-pack validation (Caminho C, swarch-*)
+
+const SWARCH_PACK_REPO = resolve(__dirname, "../../../matilha-software-arch-pack");
+const swarchPackExists = existsSync(SWARCH_PACK_REPO);
+
+const swarchPackSkillFrontmatterSchema = z.object({
+  name: z.string().regex(/^[a-z][a-z0-9-]*[a-z0-9]$/),
+  description: z.string().min(1).max(800),
+  category: z.enum(["swarch"]),
+  version: z.string().regex(/^\d+\.\d+\.\d+$/),
+  requires: z.array(z.string()).optional(),
+  optional_companions: z.array(z.string()).optional()
+});
+
+function loadSwarchPackSkillFrontmatter(skillDir: string): unknown {
+  const content = readFileSync(resolve(SWARCH_PACK_REPO, "skills", skillDir, "SKILL.md"), "utf-8");
+  const match = content.match(/^---\n([\s\S]*?)\n---/);
+  if (!match) throw new Error(`${skillDir}: SKILL.md has no frontmatter`);
+  return parseYaml(match[1]!);
+}
+
+function listSwarchPackSkills(): string[] {
+  if (!swarchPackExists) return [];
+  return readdirSync(resolve(SWARCH_PACK_REPO, "skills")).filter((d) => !d.startsWith("."));
+}
+
+function loadSwarchPackSkillContent(skillDir: string): string {
+  return readFileSync(resolve(SWARCH_PACK_REPO, "skills", skillDir, "SKILL.md"), "utf-8");
+}
+
+function extractSwarchPackDescriptionWords(skillDir: string): Set<string> {
+  const fm = loadSwarchPackSkillFrontmatter(skillDir) as { description: string };
+  const stopwords = new Set(["use", "when", "a", "an", "the", "and", "or", "of", "to", "in", "with", "for", "on", "at", "by", "de", "da", "do", "para", "com", "em", "quando", "que", "ao"]);
+  return new Set(
+    fm.description
+      .toLowerCase()
+      .split(/[\s,.\-—–:;()]+/)
+      .filter((w) => w.length > 2 && !stopwords.has(w))
+  );
+}
+
+describe.skipIf(!swarchPackExists)("matilha-software-arch-pack plugin.json (Wave 5h)", () => {
+  it("plugin.json declares matilha-pack keyword", () => {
+    const raw = readFileSync(resolve(SWARCH_PACK_REPO, ".claude-plugin/plugin.json"), "utf-8");
+    const parsed = JSON.parse(raw) as { keywords?: string[] };
+    expect(parsed.keywords, "pack plugin.json must include 'matilha-pack' in keywords").toContain("matilha-pack");
+  });
+
+  it("plugin.json has valid top-level shape", () => {
+    const raw = readFileSync(resolve(SWARCH_PACK_REPO, ".claude-plugin/plugin.json"), "utf-8");
+    const parsed = JSON.parse(raw) as { name?: string; version?: string; license?: string };
+    expect(parsed.name).toBe("matilha-software-arch-pack");
+    expect(parsed.version).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(parsed.license).toBe("MIT");
+  });
+
+  it("marketplace.json parses as valid JSON", () => {
+    const raw = readFileSync(resolve(SWARCH_PACK_REPO, ".claude-plugin/marketplace.json"), "utf-8");
+    expect(() => JSON.parse(raw)).not.toThrow();
+  });
+});
+
+describe.skipIf(!swarchPackExists)("matilha-software-arch-pack skill frontmatter (Wave 5h)", () => {
+  for (const skillDir of listSwarchPackSkills()) {
+    it(`${skillDir}: frontmatter validates against swarchPackSkillFrontmatterSchema`, () => {
+      const fm = loadSwarchPackSkillFrontmatter(skillDir);
+      const result = swarchPackSkillFrontmatterSchema.safeParse(fm);
+      if (!result.success) {
+        const issues = result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
+        throw new Error(`${skillDir} frontmatter invalid: ${issues}`);
+      }
+    });
+
+    it(`${skillDir}: frontmatter name matches directory name`, () => {
+      const fm = loadSwarchPackSkillFrontmatter(skillDir) as { name: string };
+      expect(fm.name).toBe(skillDir);
+    });
+
+    it(`${skillDir}: description starts with "Use when" or "When"`, () => {
+      const fm = loadSwarchPackSkillFrontmatter(skillDir) as { description: string };
+      const ok = /^Use when |^When /.test(fm.description);
+      expect(ok, `${skillDir} description does not start with "Use when" or "When": ${fm.description}`).toBe(true);
+    });
+
+    it(`${skillDir}: category is swarch, matching slug prefix swarch-`, () => {
+      const fm = loadSwarchPackSkillFrontmatter(skillDir) as { category: string };
+      expect(fm.category).toBe("swarch");
+      expect(skillDir.startsWith("swarch-")).toBe(true);
+    });
+  }
+});
+
+describe.skipIf(!swarchPackExists)("matilha-software-arch-pack skill body (Wave 5h)", () => {
+  for (const skillDir of listSwarchPackSkills()) {
+    it(`${skillDir}: body has mandatory ## Sources section`, () => {
+      const content = loadSwarchPackSkillContent(skillDir);
+      expect(content, `${skillDir} missing ## Sources section`).toContain("## Sources");
+    });
+
+    it(`${skillDir}: Sources section has at least 1 wikilink`, () => {
+      const content = loadSwarchPackSkillContent(skillDir);
+      const sourcesIdx = content.indexOf("## Sources");
+      expect(sourcesIdx).toBeGreaterThan(-1);
+      const sourcesBody = content.slice(sourcesIdx);
+      const wikilinks = sourcesBody.match(/\[\[[^\]]+\]\]/g) ?? [];
+      expect(wikilinks.length, `${skillDir} has no wikilinks in Sources section`).toBeGreaterThan(0);
+    });
+
+    it(`${skillDir}: body has all 11 core required sections plus Sources`, () => {
+      const content = loadSwarchPackSkillContent(skillDir);
+      const required = [
+        "## When this fires",
+        "## Preconditions",
+        "## Execution Workflow",
+        "## Rules: Do",
+        "## Rules: Don't",
+        "## Expected Behavior",
+        "## Quality Gates",
+        "## Companion Integration",
+        "## Output Artifacts",
+        "## Example Constraint Language",
+        "## Troubleshooting"
+      ];
+      for (const section of required) {
+        expect(content, `${skillDir} missing ${section}`).toContain(section);
+      }
+      const hasTrailingSection =
+        content.includes("## CLI shortcut") || content.includes("## Concrete Example");
+      expect(hasTrailingSection, `${skillDir} missing both "## CLI shortcut" and "## Concrete Example"`).toBe(true);
+    });
+
+    it(`${skillDir}: body length is 100-500 lines (Caminho C distillation range)`, () => {
+      const content = loadSwarchPackSkillContent(skillDir);
+      const lines = content.split("\n").length;
+      expect(lines, `${skillDir} body is ${lines} lines; expected 100-500`).toBeGreaterThan(99);
+      expect(lines, `${skillDir} body is ${lines} lines; expected 100-500`).toBeLessThan(501);
+    });
+  }
+});
+
+describe.skipIf(!swarchPackExists)("matilha-software-arch-pack activation uniqueness heuristic (Wave 5h)", () => {
+  it("no pair of skills has > 80% description word overlap", () => {
+    const skills = listSwarchPackSkills();
+    const wordsBySkill = new Map(skills.map((s) => [s, extractSwarchPackDescriptionWords(s)]));
+    const collisions: string[] = [];
+
+    for (let i = 0; i < skills.length; i++) {
+      for (let j = i + 1; j < skills.length; j++) {
+        const a = skills[i]!;
+        const b = skills[j]!;
+        const aWords = wordsBySkill.get(a)!;
+        const bWords = wordsBySkill.get(b)!;
+        const intersection = new Set([...aWords].filter((w) => bWords.has(w)));
+        const union = new Set([...aWords, ...bWords]);
+        const overlap = union.size > 0 ? intersection.size / union.size : 0;
+        if (overlap > 0.8) {
+          collisions.push(`${a} <> ${b}: ${(overlap * 100).toFixed(1)}%`);
+        }
+      }
+    }
+
+    expect(collisions, `Activation collisions: ${collisions.join(", ")}`).toHaveLength(0);
+  });
+});
+
+describe.skipIf(!swarchPackExists)("matilha-software-arch-pack overlap disclosure (Wave 5h)", () => {
+  // 5 skills have Complementa disclosures per Session 1 overlap-analysis.md
+  const overlapSkills = [
+    { slug: "swarch-dual-store-source-of-truth", expectedPhrases: ["Complements", "Complementa"] },
+    { slug: "swarch-event-gateway-boundary", expectedPhrases: ["Complements", "Complementa"] },
+    { slug: "swarch-ticker-vs-rule-per-entity", expectedPhrases: ["Complements", "Complementa"] },
+    { slug: "swarch-pull-over-push-orchestration", expectedPhrases: ["Complements", "Complementa"] },
+    { slug: "swarch-lambda-chain-shape", expectedPhrases: ["Complements", "Complementa"] }
+  ];
+  for (const { slug, expectedPhrases } of overlapSkills) {
+    it(`${slug}: Companion Integration section declares overlap distinction`, () => {
+      const content = loadSwarchPackSkillContent(slug);
+      const ciIdx = content.indexOf("## Companion Integration");
+      expect(ciIdx).toBeGreaterThan(-1);
+      const nextSectionIdx = content.indexOf("\n## ", ciIdx + 1);
+      const ciBody = nextSectionIdx > -1 ? content.slice(ciIdx, nextSectionIdx) : content.slice(ciIdx);
+      const hasDisclosure = expectedPhrases.some((p) => ciBody.includes(p));
+      expect(hasDisclosure, `${slug} Companion Integration must contain one of: ${expectedPhrases.join(" | ")}`).toBe(true);
+    });
+  }
+});
