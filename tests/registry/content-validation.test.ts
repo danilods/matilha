@@ -833,10 +833,13 @@ describe.skipIf(!skillsRepoExists)("matilha-compose body (Wave 5d)", () => {
     expect(content).toMatch(/Case D/);
   });
 
-  it("preamble template contains guidance paragraph marker", () => {
+  it("preamble template contains guidance marker", () => {
     if (!composeExists) return;
     const content = readFileSync(composePath, "utf-8");
-    expect(content).toMatch(/Guidance for the receiving skill/i);
+    // Accept either the verbose "Guidance for the receiving skill" form (Wave 5d)
+    // or the compact "Guidance: <instruction>" form (Wave 5d.1 quiet-mode preamble).
+    const hasGuidance = /Guidance for the receiving skill/i.test(content) || /Guidance:/i.test(content);
+    expect(hasGuidance, "preamble missing guidance instruction to receiving skill").toBe(true);
   });
 });
 
