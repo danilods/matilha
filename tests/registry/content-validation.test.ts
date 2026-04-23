@@ -898,3 +898,188 @@ describe.skipIf(!skillsRepoExists)("matilha-design body (Wave 5d refactor)", () 
     expect(content).toMatch(/Krug|recognition|progressive disclosure/i);
   });
 });
+
+// Wave 5e additions — matilha-sysdesign-pack validation
+
+const SYSDESIGN_PACK_REPO = resolve(__dirname, "../../../matilha-sysdesign-pack");
+const sysdesignPackExists = existsSync(SYSDESIGN_PACK_REPO);
+
+const sysdesignPackSkillFrontmatterSchema = z.object({
+  name: z.string().regex(/^[a-z][a-z0-9-]*[a-z0-9]$/),
+  description: z.string().min(1).max(800),
+  category: z.enum(["sysdesign"]),
+  version: z.string().regex(/^\d+\.\d+\.\d+$/),
+  requires: z.array(z.string()).optional(),
+  optional_companions: z.array(z.string()).optional()
+});
+
+function loadSysdesignPackSkillFrontmatter(skillDir: string): unknown {
+  const content = readFileSync(resolve(SYSDESIGN_PACK_REPO, "skills", skillDir, "SKILL.md"), "utf-8");
+  const match = content.match(/^---\n([\s\S]*?)\n---/);
+  if (!match) throw new Error(`${skillDir}: SKILL.md has no frontmatter`);
+  return parseYaml(match[1]!);
+}
+
+function listSysdesignPackSkills(): string[] {
+  if (!sysdesignPackExists) return [];
+  return readdirSync(resolve(SYSDESIGN_PACK_REPO, "skills")).filter((d) => !d.startsWith("."));
+}
+
+function loadSysdesignPackSkillContent(skillDir: string): string {
+  return readFileSync(resolve(SYSDESIGN_PACK_REPO, "skills", skillDir, "SKILL.md"), "utf-8");
+}
+
+function extractSysdesignPackDescriptionWords(skillDir: string): Set<string> {
+  const fm = loadSysdesignPackSkillFrontmatter(skillDir) as { description: string };
+  const stopwords = new Set(["use", "when", "a", "an", "the", "and", "or", "of", "to", "in", "with", "for", "on", "at", "by"]);
+  return new Set(
+    fm.description
+      .toLowerCase()
+      .split(/[\s,.\-—–:;()]+/)
+      .filter((w) => w.length > 2 && !stopwords.has(w))
+  );
+}
+
+describe.skipIf(!sysdesignPackExists)("matilha-sysdesign-pack plugin.json (Wave 5e)", () => {
+  it("plugin.json declares matilha-pack keyword", () => {
+    const raw = readFileSync(resolve(SYSDESIGN_PACK_REPO, ".claude-plugin/plugin.json"), "utf-8");
+    const parsed = JSON.parse(raw) as { keywords?: string[] };
+    expect(parsed.keywords, "pack plugin.json must include 'matilha-pack' in keywords").toContain("matilha-pack");
+  });
+
+  it("plugin.json has valid top-level shape", () => {
+    const raw = readFileSync(resolve(SYSDESIGN_PACK_REPO, ".claude-plugin/plugin.json"), "utf-8");
+    const parsed = JSON.parse(raw) as { name?: string; version?: string; license?: string };
+    expect(parsed.name).toBe("matilha-sysdesign-pack");
+    expect(parsed.version).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(parsed.license).toBe("MIT");
+  });
+
+  it("marketplace.json parses as valid JSON", () => {
+    const raw = readFileSync(resolve(SYSDESIGN_PACK_REPO, ".claude-plugin/marketplace.json"), "utf-8");
+    expect(() => JSON.parse(raw)).not.toThrow();
+  });
+});
+
+describe.skipIf(!sysdesignPackExists)("matilha-sysdesign-pack skill frontmatter (Wave 5e)", () => {
+  for (const skillDir of listSysdesignPackSkills()) {
+    it(`${skillDir}: frontmatter validates against sysdesignPackSkillFrontmatterSchema`, () => {
+      const fm = loadSysdesignPackSkillFrontmatter(skillDir);
+      const result = sysdesignPackSkillFrontmatterSchema.safeParse(fm);
+      if (!result.success) {
+        const issues = result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
+        throw new Error(`${skillDir} frontmatter invalid: ${issues}`);
+      }
+    });
+
+    it(`${skillDir}: frontmatter name matches directory name`, () => {
+      const fm = loadSysdesignPackSkillFrontmatter(skillDir) as { name: string };
+      expect(fm.name).toBe(skillDir);
+    });
+
+    it(`${skillDir}: description starts with "Use when" or "When"`, () => {
+      const fm = loadSysdesignPackSkillFrontmatter(skillDir) as { description: string };
+      const ok = /^Use when |^When /.test(fm.description);
+      expect(ok, `${skillDir} description does not start with "Use when" or "When": ${fm.description}`).toBe(true);
+    });
+
+    it(`${skillDir}: category is sysdesign, matching slug prefix sysdesign-`, () => {
+      const fm = loadSysdesignPackSkillFrontmatter(skillDir) as { category: string };
+      expect(fm.category).toBe("sysdesign");
+      expect(skillDir.startsWith("sysdesign-")).toBe(true);
+    });
+  }
+});
+
+describe.skipIf(!sysdesignPackExists)("matilha-sysdesign-pack skill body (Wave 5e)", () => {
+  for (const skillDir of listSysdesignPackSkills()) {
+    it(`${skillDir}: body has mandatory ## Sources section`, () => {
+      const content = loadSysdesignPackSkillContent(skillDir);
+      expect(content, `${skillDir} missing ## Sources section`).toContain("## Sources");
+    });
+
+    it(`${skillDir}: Sources section has at least 1 wikilink`, () => {
+      const content = loadSysdesignPackSkillContent(skillDir);
+      const sourcesIdx = content.indexOf("## Sources");
+      expect(sourcesIdx).toBeGreaterThan(-1);
+      const sourcesBody = content.slice(sourcesIdx);
+      const wikilinks = sourcesBody.match(/\[\[[^\]]+\]\]/g) ?? [];
+      expect(wikilinks.length, `${skillDir} has no wikilinks in Sources section`).toBeGreaterThan(0);
+    });
+
+    it(`${skillDir}: body has all 11 core required sections plus Sources`, () => {
+      // Wave 5e accepts "CLI shortcut (optional)" OR "Concrete Example" as the 12th section trailing position.
+      // Both are valid pack conventions per SP2a/2b/2c agent choices.
+      const content = loadSysdesignPackSkillContent(skillDir);
+      const required = [
+        "## When this fires",
+        "## Preconditions",
+        "## Execution Workflow",
+        "## Rules: Do",
+        "## Rules: Don't",
+        "## Expected Behavior",
+        "## Quality Gates",
+        "## Companion Integration",
+        "## Output Artifacts",
+        "## Example Constraint Language",
+        "## Troubleshooting"
+      ];
+      for (const section of required) {
+        expect(content, `${skillDir} missing ${section}`).toContain(section);
+      }
+      const hasTrailingSection =
+        content.includes("## CLI shortcut") || content.includes("## Concrete Example");
+      expect(hasTrailingSection, `${skillDir} missing both "## CLI shortcut" and "## Concrete Example"`).toBe(true);
+    });
+
+    it(`${skillDir}: body length is 150-500 lines (target 150-300)`, () => {
+      const content = loadSysdesignPackSkillContent(skillDir);
+      const lines = content.split("\n").length;
+      expect(lines, `${skillDir} body is ${lines} lines; expected 150-500`).toBeGreaterThan(149);
+      expect(lines, `${skillDir} body is ${lines} lines; expected 150-500`).toBeLessThan(501);
+    });
+  }
+});
+
+describe.skipIf(!sysdesignPackExists)("matilha-sysdesign-pack activation uniqueness heuristic (Wave 5e)", () => {
+  it("no pair of skills has > 80% description word overlap", () => {
+    const skills = listSysdesignPackSkills();
+    const wordsBySkill = new Map(skills.map((s) => [s, extractSysdesignPackDescriptionWords(s)]));
+    const collisions: string[] = [];
+
+    for (let i = 0; i < skills.length; i++) {
+      for (let j = i + 1; j < skills.length; j++) {
+        const a = skills[i]!;
+        const b = skills[j]!;
+        const aWords = wordsBySkill.get(a)!;
+        const bWords = wordsBySkill.get(b)!;
+        const intersection = new Set([...aWords].filter((w) => bWords.has(w)));
+        const union = new Set([...aWords, ...bWords]);
+        const overlap = union.size > 0 ? intersection.size / union.size : 0;
+        if (overlap > 0.8) {
+          collisions.push(`${a} <> ${b}: ${(overlap * 100).toFixed(1)}%`);
+        }
+      }
+    }
+
+    expect(collisions, `Activation collisions: ${collisions.join(", ")}`).toHaveLength(0);
+  });
+});
+
+describe.skipIf(!sysdesignPackExists)("matilha-sysdesign-pack overlap disclosure (Wave 5e)", () => {
+  // Accepts EN or PT forms: "Complements" / "Complementa".
+  const overlapSkills = [
+    { slug: "sysdesign-nfr-clarification", expectedPhrases: ["Complements", "Complementa"] }
+  ];
+  for (const { slug, expectedPhrases } of overlapSkills) {
+    it(`${slug}: Companion Integration section declares overlap distinction`, () => {
+      const content = loadSysdesignPackSkillContent(slug);
+      const ciIdx = content.indexOf("## Companion Integration");
+      expect(ciIdx).toBeGreaterThan(-1);
+      const nextSectionIdx = content.indexOf("\n## ", ciIdx + 1);
+      const ciBody = nextSectionIdx > -1 ? content.slice(ciIdx, nextSectionIdx) : content.slice(ciIdx);
+      const hasDisclosure = expectedPhrases.some((p) => ciBody.includes(p));
+      expect(hasDisclosure, `${slug} Companion Integration must contain one of: ${expectedPhrases.join(" | ")}`).toBe(true);
+    });
+  }
+});
