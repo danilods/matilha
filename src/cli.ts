@@ -173,19 +173,21 @@ program
 
 program
   .command("install-plugins")
-  .description("Emit a /plugin install block for the matilha ecosystem (interactive by default)")
+  .description("Install the matilha ecosystem (interactive by default; paste-block or --deep direct install)")
   .option("--full", "non-interactive: core + all 7 companion packs", false)
   .option("--core-only", "non-interactive: just matilha-skills core", false)
   .option("--preset <name>", "non-interactive: backend | ux | fullstack | security")
-  .option("--with-claudemd", "also emit the CLAUDE.md activation-priority snippet", false)
-  .option("--no-clipboard", "skip clipboard copy; print to stdout only")
-  .action(async (opts: { full: boolean; coreOnly: boolean; preset?: string; withClaudemd: boolean; clipboard: boolean }) => {
+  .option("--with-claudemd", "also handle CLAUDE.md activation-priority snippet (emit in paste mode, merge-or-create in --deep mode)", false)
+  .option("--deep", "execute `claude plugin install` for each pack instead of emitting a paste block (requires claude CLI on PATH)", false)
+  .option("--no-clipboard", "skip clipboard copy in paste mode; print to stdout only")
+  .action(async (opts: { full: boolean; coreOnly: boolean; preset?: string; withClaudemd: boolean; deep: boolean; clipboard: boolean }) => {
     try {
       await installPluginsCommand({
         full: opts.full,
         coreOnly: opts.coreOnly,
         preset: opts.preset,
         withClaudemd: opts.withClaudemd,
+        deep: opts.deep,
         clipboard: opts.clipboard
       });
     } catch (err) {

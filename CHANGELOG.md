@@ -1,10 +1,11 @@
 # Changelog
 
-## [1.2.0] — 2026-04-24 — Unified install UX (Wave 5g SP-A)
+## [1.2.0] — 2026-04-24 — Unified install UX (Wave 5g SP-A + SP-E)
 
 ### Added
 
 - `feat(cli): matilha install-plugins subcommand — interactive + non-interactive pack selection, clipboard copy, CLAUDE.md snippet emission (Wave 5g SP-A)`. New command emits a paste-ready `/plugin install` block for the matilha ecosystem. Flags: `--full` (core + 7 packs), `--core-only`, `--preset <backend|ux|fullstack|security>`, `--with-claudemd` (append the activation-priority snippet with `<!-- matilha-start v1 -->` markers), `--no-clipboard` (stdout only). Default behavior with no flags: interactive @clack/prompts picker with preset + custom options, clipboard auto-copy via pbcopy/xclip/clip (graceful stdout fallback).
+- `feat(cli): --deep flag — zero-paste install via claude plugin install (Wave 5g SP-E)`. When `--deep` is set, the CLI detects the `claude` binary on PATH and runs `claude plugin marketplace add` + `claude plugin install <plugin>@<marketplace> --scope user` for each selected pack, sequentially. Idempotent: re-runs treat "already installed" exits as success. Combined with `--with-claudemd`, also applies the Wave 5g SP-B merge-or-create contract to `./CLAUDE.md` in the current directory. Falls back gracefully to paste-block mode when the `claude` CLI is absent. New helpers: `detectClaudeCli.ts` (PATH scanner, no shell invocation), `executeDeepInstall.ts` (execFile-based sequential runner, dry-run support, `onStep` progress callback), `writeClaudeMd.ts` (3-case merge-or-create: create / append / replace-between-markers). Matches the `claude plugin install` shell API documented at docs.claude.com/plugins-reference. After completion, prints an instruction to run `/reload-plugins` (in-session) or open a new Claude Code session to activate.
 
 ## [1.1.0] — 2026-04-24 — Validator polish (synced with matilha-skills 1.1.0)
 
