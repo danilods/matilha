@@ -3,6 +3,8 @@
 > **You lead. Agents hunt.**
 > A harness for building complex projects with AI.
 
+> 🏠 **This is the CLI twin.** The official matilha entry point is [**danilods/matilha-skills**](https://github.com/danilods/matilha-skills) — the Claude Code plugin ecosystem. This CLI is optional: deterministic engine for CI, automation, and power-user workflows. For interactive development in Claude Code, use the plugin. For scripts / CI / headless automation, use this CLI. They're twin surfaces of the same methodology.
+
 The TypeScript CLI encarnation of Matilha. Deterministic engine for CI, automation, and power-user workflows. For a zero-install experience inside AI coding tools, see the plugin below.
 
 ## Install as a plugin (no npm required)
