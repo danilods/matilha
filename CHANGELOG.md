@@ -1,5 +1,40 @@
 # Changelog
 
+## [1.0.0] — 2026-04-23 — First official release
+
+Matilha CLI reaches v1.0.0 alongside the matilha-skills plugin ecosystem (7 companion packs, 139 skills total).
+
+**Published to npm** for the first time. Installable via:
+
+```
+npm install -g matilha
+```
+
+### What's shipped
+
+- **Phase-gated CLI** (from Waves 1-3b) — `matilha init`, `matilha scout`, `matilha plan`, `matilha hunt`, `matilha gather`, `matilha howl`, `matilha attest`, `matilha plan-status`, `matilha list`, `matilha pull`.
+- **Deterministic engine** — commands produce reproducible outputs from the same inputs; enables CI integration + automation.
+- **Twin identity** — same methodology content as matilha-skills plugin (Twin Identity directive from Wave 4a), two surfaces (CLI for determinism, plugin for composition).
+- **Validator suite** — 1466 tests passing across core registry + 7 companion packs + composition layer + all iterations of Waves 3a → 5i.
+
+### Install
+
+Global:
+
+```
+npm install -g matilha
+```
+
+Verify:
+
+```
+matilha --version  # 1.0.0
+```
+
+### Version synchronization policy
+
+matilha CLI 1.0.0 synchronizes with matilha-skills plugin 1.0.0 at this release. Companion packs stay at 0.1.0 (honest semver — each pack has shipped exactly once; they'll bump independently as content evolves). Future CLI minor/patch versions track CLI-specific changes; major version bumps re-sync with the plugin ecosystem when breaking methodology changes ship.
+
 ## [Wave 5d] — 2026-04-22 — Composition Layer Validator
 
 Extends `tests/registry/content-validation.test.ts` with 18 new tests protecting the Wave 5d composition layer introduced in matilha-skills (matilha-compose gateway + matilha-plan / matilha-design refactors). CLI version stays at 0.4.0 — these are non-breaking validator additions.
