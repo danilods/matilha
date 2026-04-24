@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.1.0] — 2026-04-24 — Validator polish (synced with matilha-skills 1.1.0)
+
+Non-breaking validator additions + infrastructure hardening. No CLI-command behavior changes.
+
+### Added / Changed
+
+- Validator schema tolerance for orchestrator-skill descriptions: `description.max` raised to 800 characters (was 300), accommodating matilha-compose-style activation gates that encode conjunct-heavy conditions.
+- Description linter accepts `You MUST` opener in addition to `Use when` / `When`. Required for matilha-compose to out-trigger competing third-party MUST-clause skills in activation competition.
+- Stopwords list for activation-uniqueness heuristic extended with Portuguese terms (de, da, do, para, com, em, quando, que, ao). Caminho C packs author descriptions in Portuguese; previous stopword list was Anglo-centric.
+- Line-range check for Caminho C packs (software-eng, software-arch, security) broadened to 100–500 (vs 150–500 for literature packs) to accommodate the natural compactness of 2-layer distillation.
+- Test coverage for `matilha-compose` body invariants (Pack awareness section, no-hardcoded-prefix guard, fallback cases B/C/D, preamble template guidance marker).
+
+No regressions across the arc Wave 3a → 1.1.0. Test count stable at 1466 passing.
+
 ## [1.0.0] — 2026-04-23 — First official release
 
 Matilha CLI reaches v1.0.0 alongside the matilha-skills plugin ecosystem (7 companion packs, 139 skills total).
