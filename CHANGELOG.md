@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.2.0] — 2026-04-24 — Unified install UX (Wave 5g SP-A)
+
+### Added
+
+- `feat(cli): matilha install-plugins subcommand — interactive + non-interactive pack selection, clipboard copy, CLAUDE.md snippet emission (Wave 5g SP-A)`. New command emits a paste-ready `/plugin install` block for the matilha ecosystem. Flags: `--full` (core + 7 packs), `--core-only`, `--preset <backend|ux|fullstack|security>`, `--with-claudemd` (append the activation-priority snippet with `<!-- matilha-start v1 -->` markers), `--no-clipboard` (stdout only). Default behavior with no flags: interactive @clack/prompts picker with preset + custom options, clipboard auto-copy via pbcopy/xclip/clip (graceful stdout fallback).
+
 ## [1.1.0] — 2026-04-24 — Validator polish (synced with matilha-skills 1.1.0)
 
 Non-breaking validator additions + infrastructure hardening. No CLI-command behavior changes.

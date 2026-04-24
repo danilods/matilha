@@ -13,6 +13,7 @@ import { listCommand } from "./list/listCommand";
 import { pullCommand } from "./pull/pullCommand";
 import { huntCommand } from "./hunt/huntCommand";
 import { gatherCommand } from "./gather/gatherCommand";
+import { installPluginsCommand } from "./install-plugins/installPluginsCommand";
 
 const program = new Command();
 
@@ -167,6 +168,28 @@ program
       });
     } catch (err) {
       handleCommandError(err, "running 'matilha gather'");
+    }
+  });
+
+program
+  .command("install-plugins")
+  .description("Emit a /plugin install block for the matilha ecosystem (interactive by default)")
+  .option("--full", "non-interactive: core + all 7 companion packs", false)
+  .option("--core-only", "non-interactive: just matilha-skills core", false)
+  .option("--preset <name>", "non-interactive: backend | ux | fullstack | security")
+  .option("--with-claudemd", "also emit the CLAUDE.md activation-priority snippet", false)
+  .option("--no-clipboard", "skip clipboard copy; print to stdout only")
+  .action(async (opts: { full: boolean; coreOnly: boolean; preset?: string; withClaudemd: boolean; clipboard: boolean }) => {
+    try {
+      await installPluginsCommand({
+        full: opts.full,
+        coreOnly: opts.coreOnly,
+        preset: opts.preset,
+        withClaudemd: opts.withClaudemd,
+        clipboard: opts.clipboard
+      });
+    } catch (err) {
+      handleCommandError(err, "running 'matilha install-plugins'");
     }
   });
 
