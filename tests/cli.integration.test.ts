@@ -3,6 +3,7 @@ import { execFileSync } from "node:child_process";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { existsSync } from "node:fs";
+import pkg from "../package.json";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const cliPath = resolve(__dirname, "../dist/cli.js");
@@ -20,7 +21,7 @@ describe("CLI integration", () => {
     const output = execFileSync("node", [cliPath, "--version"], {
       encoding: "utf-8"
     }).trim();
-    expect(output).toBe("0.1.0");
+    expect(output).toBe(pkg.version);
   });
 
   it("--help lists three commands", () => {
