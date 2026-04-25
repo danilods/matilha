@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/danilods/matilha-skills/main/assets/matilha-banner.png" alt="matilha — You Lead. Agents Hunt." width="100%" />
+</p>
+
 # matilha — CLI
 
 > **You lead. Agents hunt.**
