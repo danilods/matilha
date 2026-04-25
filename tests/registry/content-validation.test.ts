@@ -851,10 +851,10 @@ describe.skipIf(!skillsRepoExists)("matilha-compose body (Wave 5d)", () => {
   it("preamble template contains matilha sigil (storytelling mode)", () => {
     if (!composeExists) return;
     const content = readFileSync(composePath, "utf-8");
-    // The canonical matilha sigil: alpha wolf with crown (♛) above three pack dogs.
+    // The canonical matilha sigil: wolf ASCII art with MATILHA wordmark embedded.
     // This is the storytelling-mode preamble marker — distinct from pure prose preambles.
-    const hasSigil = /♛/.test(content) && /matilha/i.test(content);
-    expect(hasSigil, "preamble missing matilha sigil (crown ♛ + matilha label)").toBe(true);
+    const hasSigil = /#{5,}/.test(content) && /MATILHA/i.test(content);
+    expect(hasSigil, "preamble missing matilha sigil (wolf ASCII art + MATILHA label)").toBe(true);
   });
 });
 

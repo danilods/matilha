@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.2] — 2026-04-24 — Novo sigil: ASCII art do lobo com wordmark MATILHA
+
+### Changed
+
+- `src/ui/banner.ts` — `MATILHA_BANNER` substituído pelo ASCII art `#`-based do lobo com wordmark MATILHA (era text-art de blocos Unicode).
+- `src/cli.ts` — banner agora aparece em `matilha` (sem args) via `printBanner()` + em `matilha --help` via `addHelpText("beforeAll", ...)`. Fix de ordering: o check de args sem-comando agora ocorre antes de `program.parse()` para evitar exit 1 do commander antes de renderizar o banner.
+
 ## [1.2.1] — 2026-04-24 — Fix VERSION constant not reflecting package.json
 
 ### Fixed

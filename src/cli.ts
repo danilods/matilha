@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import { VERSION } from "./index";
-import { printBanner } from "./ui/banner";
+import { printBanner, MATILHA_BANNER } from "./ui/banner";
 import { RegistryClient } from "./registry";
 import { initProject } from "./init/initProject";
 import { howlCommand } from "./howl/howlCommand";
@@ -20,7 +20,8 @@ const program = new Command();
 program
   .name("matilha")
   .description("Agentic methodology plugin + CLI. Humans lead, agents hunt.")
-  .version(VERSION, "-v, --version", "Print version and exit");
+  .version(VERSION, "-v, --version", "Print version and exit")
+  .addHelpText("beforeAll", MATILHA_BANNER);
 
 program
   .command("list")
@@ -195,9 +196,10 @@ program
     }
   });
 
-program.parse(process.argv);
-
 if (!process.argv.slice(2).length) {
   printBanner();
   program.outputHelp();
+  process.exit(0);
 }
+
+program.parse(process.argv);

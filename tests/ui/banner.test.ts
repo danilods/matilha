@@ -17,13 +17,12 @@ describe("banner", () => {
   });
 
   it("MATILHA_BANNER contains project identity", () => {
-    expect(MATILHA_BANNER).toContain("Humanos lideram");
-    expect(MATILHA_BANNER).toContain("Agentes caçam");
+    expect(MATILHA_BANNER).toContain("#################################################################################################");
   });
 
   it("printBanner emits the full ASCII banner", () => {
     printBanner();
-    expect(captured.join("\n")).toContain("Humanos lideram");
+    expect(captured.join("\n")).toContain("#################################################################################################");
   });
 
   it("printMiniBanner emits a command-scoped header (no ASCII art)", () => {
