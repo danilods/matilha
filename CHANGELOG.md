@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.2.1] — 2026-04-24 — Fix VERSION constant not reflecting package.json
+
+### Fixed
+
+- `fix: VERSION constant in src/index.ts was hardcoded to "0.1.0"` — `matilha --version` reportava `0.1.0` em todas as versões desde v1.0.0. Causa raiz: `src/index.ts` exportava uma string literal que nunca acompanhava os bumps do `package.json`. Corrigido: `VERSION` agora lê `version` do `package.json` em runtime via `createRequire`. `tests/cli.integration.test.ts` atualizado para assertar contra `pkg.version` em vez de string hardcoded — impede regressão futura.
+
 ## [1.2.0] — 2026-04-24 — Unified install UX (Wave 5g SP-A + SP-E)
 
 ### Added
