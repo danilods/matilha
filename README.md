@@ -20,38 +20,45 @@ matilha --version
 
 ---
 
-## Install the full ecosystem (core + 7 packs)
+## Install the ecosystem (core + 7 packs)
 
-The most common use of this CLI is installing the matilha plugin ecosystem into Claude Code in one command:
+### Interactive — pick your packs
+
+```bash
+matilha install-plugins
+```
+
+Launches a guided picker:
+1. Choose a preset or **Custom** to select packs individually
+2. Confirm whether to write the CLAUDE.md activation snippet
+3. Copies the install block to clipboard (paste in Claude Code) — or add `--deep` to install directly
+
+Presets available: `backend` · `ux` · `fullstack` · `security` · `core-only` · `custom`
+
+### Non-interactive — install everything in one shot
 
 ```bash
 matilha install-plugins --full --deep --with-claudemd
 ```
 
-What this does:
+What `--full --deep --with-claudemd` does:
 1. Adds `danilods/matilha-skills` to the Claude Code marketplace
 2. Runs `claude plugin install` for each of the 8 plugins (core + 7 packs)
-3. Writes the activation-priority snippet to `./CLAUDE.md` in the current directory
+3. Writes the activation-priority snippet to `./CLAUDE.md`
 
-Then in Claude Code:
-```
-/reload-plugins
-```
+Then in Claude Code: `/reload-plugins` → done.
 
-Done. Matilha is active.
-
-### Options
+### All flags
 
 | Flag | Effect |
 |---|---|
-| `--full` | Core + all 7 companion packs |
-| `--core-only` | Core plugin only (`matilha@matilha-skills`) |
-| `--preset <name>` | `backend` · `ux` · `fullstack` · `security` |
-| `--with-claudemd` | Also write/merge CLAUDE.md activation snippet |
-| `--deep` | Run `claude plugin install` directly (requires `claude` CLI on PATH) |
+| _(no flags)_ | Interactive picker — preset or custom multiselect |
+| `--full` | Non-interactive: core + all 7 companion packs |
+| `--core-only` | Non-interactive: core plugin only |
+| `--preset <name>` | Non-interactive: `backend` · `ux` · `fullstack` · `security` |
+| `--deep` | Run `claude plugin install` directly instead of emitting a paste block (requires `claude` CLI on PATH) |
+| `--with-claudemd` | Also write/merge the CLAUDE.md activation-priority snippet |
 | `--no-clipboard` | Print paste block to stdout instead of copying to clipboard |
-
-Without `--deep`, the command emits a paste-ready block for copying into Claude Code.
 
 ---
 
