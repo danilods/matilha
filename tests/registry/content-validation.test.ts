@@ -283,7 +283,7 @@ function loadUxPackSkillFrontmatter(skillDir: string): unknown {
 
 function listUxPackSkills(): string[] {
   if (!uxPackExists) return [];
-  return readdirSync(resolve(UX_PACK_REPO, "skills")).filter((d) => !d.startsWith("."));
+  return readdirSync(resolve(UX_PACK_REPO, "skills")).filter((d) => !d.startsWith(".") && !d.endsWith("-trigger"));
 }
 
 function loadUxPackSkillContent(skillDir: string): string {
@@ -425,7 +425,7 @@ function loadGrowthPackSkillFrontmatter(skillDir: string): unknown {
 
 function listGrowthPackSkills(): string[] {
   if (!growthPackExists) return [];
-  return readdirSync(resolve(GROWTH_PACK_REPO, "skills")).filter((d) => !d.startsWith("."));
+  return readdirSync(resolve(GROWTH_PACK_REPO, "skills")).filter((d) => !d.startsWith(".") && !d.endsWith("-trigger"));
 }
 
 function loadGrowthPackSkillContent(skillDir: string): string {
@@ -586,7 +586,7 @@ function loadHarnessPackSkillFrontmatter(skillDir: string): unknown {
 
 function listHarnessPackSkills(): string[] {
   if (!harnessPackExists) return [];
-  return readdirSync(resolve(HARNESS_PACK_REPO, "skills")).filter((d) => !d.startsWith("."));
+  return readdirSync(resolve(HARNESS_PACK_REPO, "skills")).filter((d) => !d.startsWith(".") && !d.endsWith("-trigger"));
 }
 
 function loadHarnessPackSkillContent(skillDir: string): string {
@@ -922,7 +922,7 @@ function loadSysdesignPackSkillFrontmatter(skillDir: string): unknown {
 
 function listSysdesignPackSkills(): string[] {
   if (!sysdesignPackExists) return [];
-  return readdirSync(resolve(SYSDESIGN_PACK_REPO, "skills")).filter((d) => !d.startsWith("."));
+  return readdirSync(resolve(SYSDESIGN_PACK_REPO, "skills")).filter((d) => !d.startsWith(".") && !d.endsWith("-trigger"));
 }
 
 function loadSysdesignPackSkillContent(skillDir: string): string {
@@ -1110,7 +1110,7 @@ function loadSwengPackSkillFrontmatter(skillDir: string): unknown {
 
 function listSwengPackSkills(): string[] {
   if (!swengPackExists) return [];
-  return readdirSync(resolve(SWENG_PACK_REPO, "skills")).filter((d) => !d.startsWith("."));
+  return readdirSync(resolve(SWENG_PACK_REPO, "skills")).filter((d) => !d.startsWith(".") && !d.endsWith("-trigger"));
 }
 
 function loadSwengPackSkillContent(skillDir: string): string {
@@ -1294,7 +1294,7 @@ function loadSwarchPackSkillFrontmatter(skillDir: string): unknown {
 
 function listSwarchPackSkills(): string[] {
   if (!swarchPackExists) return [];
-  return readdirSync(resolve(SWARCH_PACK_REPO, "skills")).filter((d) => !d.startsWith("."));
+  return readdirSync(resolve(SWARCH_PACK_REPO, "skills")).filter((d) => !d.startsWith(".") && !d.endsWith("-trigger"));
 }
 
 function loadSwarchPackSkillContent(skillDir: string): string {
@@ -1481,7 +1481,7 @@ function loadSwsecPackSkillFrontmatter(skillDir: string): unknown {
 
 function listSwsecPackSkills(): string[] {
   if (!swsecPackExists) return [];
-  return readdirSync(resolve(SWSEC_PACK_REPO, "skills")).filter((d) => !d.startsWith("."));
+  return readdirSync(resolve(SWSEC_PACK_REPO, "skills")).filter((d) => !d.startsWith(".") && !d.endsWith("-trigger"));
 }
 
 function loadSwsecPackSkillContent(skillDir: string): string {
@@ -1637,6 +1637,100 @@ describe.skipIf(!swsecPackExists)("matilha-security-pack overlap disclosure (Wav
       const ciBody = nextSectionIdx > -1 ? content.slice(ciIdx, nextSectionIdx) : content.slice(ciIdx);
       const hasDisclosure = expectedPhrases.some((p) => ciBody.includes(p));
       expect(hasDisclosure, `${slug} Companion Integration must contain one of: ${expectedPhrases.join(" | ")}`).toBe(true);
+    });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Wave 5h — Maximum Deterministic Pack Activation
+//   SP-A: routing-table.md + compose Step 2a/2b deterministic lookup.
+//   SP-B: 7 trigger skills (one per companion pack).
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe.skipIf(!skillsRepoExists)("routing-table (Wave 5h SP-A)", () => {
+  const tablePath = resolve(SKILLS_REPO, "skills/matilha-compose/routing-table.md");
+  const composePath = resolve(SKILLS_REPO, "skills/matilha-compose/SKILL.md");
+
+  it("routing-table.md exists", () => {
+    expect(existsSync(tablePath), `${tablePath} must exist`).toBe(true);
+  });
+
+  const EXPECTED_PACKS = [
+    "matilha-ux-pack",
+    "matilha-growth-pack",
+    "matilha-harness-pack",
+    "matilha-sysdesign-pack",
+    "matilha-software-eng-pack",
+    "matilha-software-arch-pack",
+    "matilha-security-pack",
+  ];
+
+  it.each(EXPECTED_PACKS)("pack %s has >= 15 routing entries", (pack) => {
+    const content = readFileSync(tablePath, "utf-8");
+    const entries = content
+      .split("\n")
+      .filter((l) => l.includes("|") && !l.trim().startsWith("#"))
+      .filter((l) => l.split("|")[1]?.trim() === pack);
+    expect(entries.length, `${pack} expected >= 15 routing entries, got ${entries.length}`).toBeGreaterThanOrEqual(15);
+  });
+
+  it("compose SKILL.md references routing-table + Step 2a + Step 2b", () => {
+    const content = readFileSync(composePath, "utf-8");
+    expect(content).toContain("routing-table");
+    expect(content).toContain("Step 2a");
+    expect(content).toContain("Step 2b");
+  });
+});
+
+describe("trigger skills (Wave 5h SP-B)", () => {
+  const TRIGGER_SKILLS = [
+    { repoExists: uxPackExists, repo: UX_PACK_REPO, name: "matilha-ux-trigger" },
+    { repoExists: growthPackExists, repo: GROWTH_PACK_REPO, name: "matilha-growth-trigger" },
+    { repoExists: harnessPackExists, repo: HARNESS_PACK_REPO, name: "matilha-harness-trigger" },
+    { repoExists: sysdesignPackExists, repo: SYSDESIGN_PACK_REPO, name: "matilha-sysdesign-trigger" },
+    { repoExists: swengPackExists, repo: SWENG_PACK_REPO, name: "matilha-software-eng-trigger" },
+    { repoExists: swarchPackExists, repo: SWARCH_PACK_REPO, name: "matilha-software-arch-trigger" },
+    { repoExists: swsecPackExists, repo: SWSEC_PACK_REPO, name: "matilha-security-trigger" },
+  ];
+
+  for (const { repoExists, repo, name } of TRIGGER_SKILLS) {
+    describe.skipIf(!repoExists)(name, () => {
+      const skillPath = resolve(repo, "skills", name, "SKILL.md");
+
+      it("SKILL.md exists", () => {
+        expect(existsSync(skillPath), `${skillPath} must exist`).toBe(true);
+      });
+
+      it("description starts with 'Use when'", () => {
+        const content = readFileSync(skillPath, "utf-8");
+        const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
+        const descMatch = fmMatch?.[1]?.match(/description:\s*"(.+?)"/s);
+        const desc = descMatch?.[1] ?? "";
+        expect(desc, `${name} description must start with 'Use when'`).toMatch(/^Use when/i);
+      });
+
+      it("description has >= 8 domain keywords", () => {
+        const content = readFileSync(skillPath, "utf-8");
+        const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
+        const descMatch = fmMatch?.[1]?.match(/description:\s*"(.+?)"/s);
+        const desc = descMatch?.[1] ?? "";
+        const wordCount = desc.split(/[,\s]+/).filter((w) => w.length > 3).length;
+        expect(wordCount, `${name} description has ${wordCount} content words; >= 8 expected`).toBeGreaterThanOrEqual(8);
+      });
+
+      it("body contains 'Pack presence check'", () => {
+        const content = readFileSync(skillPath, "utf-8");
+        expect(content, `${name} body must contain 'Pack presence check'`).toContain("Pack presence check");
+      });
+
+      it("plugin.json version >= 0.3.0", () => {
+        const pluginPath = resolve(repo, ".claude-plugin/plugin.json");
+        const parsed = JSON.parse(readFileSync(pluginPath, "utf-8")) as { version?: string };
+        const v = parsed.version ?? "0.0.0";
+        const [major, minor] = v.split(".").map((n) => parseInt(n, 10));
+        const ok = major > 0 || (major === 0 && minor >= 3);
+        expect(ok, `${name}'s pack version is ${v}; >= 0.3.0 expected after Wave 5h`).toBe(true);
+      });
     });
   }
 });
