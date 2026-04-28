@@ -7,10 +7,10 @@
 > **You lead. Agents hunt.**
 > Methodology harness CLI for AI-assisted software development.
 
-> 🏠 **This is the CLI twin.** The official matilha entry point is [**danilods/matilha-skills**](https://github.com/danilods/matilha-skills) — the Claude Code plugin ecosystem with 139 skills across 7 companion packs. This CLI is the deterministic engine for power-user workflows, CI, and automation. For interactive development inside Claude Code, start with the plugin.
+> 🏠 **This is the CLI twin.** The official matilha entry point is [**danilods/matilha-skills**](https://github.com/danilods/matilha-skills) — the Claude Code plugin ecosystem with 146 skills across 7 companion packs. This CLI is the deterministic engine for power-user workflows, CI, and automation. For interactive development inside Claude Code, start with the plugin.
 
 [![npm version](https://img.shields.io/npm/v/matilha?label=npm&color=e34c26)](https://www.npmjs.com/package/matilha)
-[![tests](https://img.shields.io/badge/tests-1496%20passing-brightgreen)](#commands)
+[![tests](https://img.shields.io/badge/tests-1540%20passing-brightgreen)](#commands)
 [![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 
 ---
@@ -98,6 +98,44 @@ The CLI is one of two install surfaces. The other is the Claude Code plugin:
 | **Plugin** (`matilha-skills`) | `matilha install-plugins --deep` or `/matilha-install` wizard | Interactive development inside Claude Code |
 
 Both share the same methodology content from [danilods/matilha-skills](https://github.com/danilods/matilha-skills).
+
+---
+
+## Update
+
+```bash
+npm install -g matilha@latest
+matilha --version
+```
+
+To also update the Claude Code plugins (core + packs):
+
+```bash
+matilha install-plugins --full --deep
+```
+
+Then in Claude Code: `/reload-plugins`.
+
+---
+
+## Uninstall
+
+```bash
+# Remove the CLI
+npm uninstall -g matilha
+
+# Remove the Claude Code plugins
+claude plugin uninstall matilha --scope user
+claude plugin uninstall matilha-ux-pack --scope user
+claude plugin uninstall matilha-growth-pack --scope user
+claude plugin uninstall matilha-harness-pack --scope user
+claude plugin uninstall matilha-sysdesign-pack --scope user
+claude plugin uninstall matilha-software-eng-pack --scope user
+claude plugin uninstall matilha-software-arch-pack --scope user
+claude plugin uninstall matilha-security-pack --scope user
+```
+
+**Optional:** remove the CLAUDE.md activation snippet — it sits between `<!-- matilha-start v1 -->` and `<!-- matilha-end v1 -->` markers.
 
 ---
 
