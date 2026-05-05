@@ -27,15 +27,16 @@ export async function writeProject(
     const fileName = FILE_NAME_MAP[templateName];
     const path = join(cwd, fileName);
     const existed = existsSync(path);
+    const shouldWrite = !dryRun && (!existed || inputs.overwriteExisting);
 
-    if (!dryRun) {
+    if (shouldWrite) {
       writeFileSync(path, content, "utf-8");
     }
 
     results.push({
       path,
       bytes: Buffer.byteLength(content, "utf-8"),
-      overwritten: existed
+      overwritten: existed && shouldWrite
     });
   }
   return results;

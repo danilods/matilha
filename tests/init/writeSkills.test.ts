@@ -58,11 +58,29 @@ describe("writeSkills", () => {
   });
 
   it("writes to all detected tool dirs", async () => {
-    const detected: Tool[] = ["claude-code", "cursor", "codex", "gemini-cli"];
+    const detected: Tool[] = ["claude-code", "cursor", "codex", "gemini-cli", "aider"];
     await writeSkills(detected, tmp, false, makeMockClient());
-    for (const toolDir of [".claude", ".cursor", ".codex", ".gemini", ".agents"]) {
+    for (const toolDir of [".claude", ".cursor", ".gemini", ".agents"]) {
       expect(existsSync(join(tmp, toolDir, "skills", "matilha-init", "SKILL.md"))).toBe(true);
     }
+    expect(existsSync(join(tmp, ".codex", "skills", "matilha-init", "SKILL.md"))).toBe(false);
+    expect(existsSync(join(tmp, ".aider", "skills", "matilha-init", "SKILL.md"))).toBe(false);
+  });
+
+  it("writes Codex skills only to .agents/skills", async () => {
+    const detected: Tool[] = ["codex"];
+    const result = await writeSkills(detected, tmp, false, makeMockClient());
+    expect(result[0]?.paths).toHaveLength(1);
+    expect(existsSync(join(tmp, ".agents", "skills", "matilha-init", "SKILL.md"))).toBe(true);
+    expect(existsSync(join(tmp, ".codex", "skills", "matilha-init", "SKILL.md"))).toBe(false);
+  });
+
+  it("writes Aider-compatible skills only to .agents/skills", async () => {
+    const detected: Tool[] = ["aider"];
+    const result = await writeSkills(detected, tmp, false, makeMockClient());
+    expect(result[0]?.paths).toHaveLength(1);
+    expect(existsSync(join(tmp, ".agents", "skills", "matilha-init", "SKILL.md"))).toBe(true);
+    expect(existsSync(join(tmp, ".aider", "skills", "matilha-init", "SKILL.md"))).toBe(false);
   });
 
   it("always writes .agents/ even when no tools detected", async () => {

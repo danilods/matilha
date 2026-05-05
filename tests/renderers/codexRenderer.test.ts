@@ -24,10 +24,10 @@ const skill: MatilhaSkillInput = {
 };
 
 describe("renderCodex", () => {
-  it("writes to .codex/skills/<name>/SKILL.md", () => {
+  it("writes to .agents/skills/<name>/SKILL.md", () => {
     const result = renderCodex(skill);
     expect(result.provider).toBe("codex");
-    expect(result.relativePath).toBe(".codex/skills/matilha-review/SKILL.md");
+    expect(result.relativePath).toBe(".agents/skills/matilha-review/SKILL.md");
   });
 
   it("uses 'Codex' as provider title", () => {

@@ -26,7 +26,7 @@ export const PHASE_STATUSES = [
   "completed"
 ] as const;
 
-export const TOOLS = ["claude-code", "cursor", "codex", "gemini-cli"] as const;
+export const TOOLS = ["claude-code", "cursor", "codex", "gemini-cli", "aider"] as const;
 
 export const COMPANION_STATUSES = ["installed", "not_installed", "skipped"] as const;
 

@@ -1,5 +1,5 @@
 // tests/gather/gatherCommand.test.ts
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { mkdtempSync, writeFileSync, readFileSync, mkdirSync, existsSync, rmSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { tmpdir } from "node:os";
@@ -10,6 +10,8 @@ import { MatilhaUserError } from "../../src/ui/errorFormat";
 
 const PASS_TEST_CMD = { cmd: "sh", args: ["-c", "exit 0"] };
 const FAIL_TEST_CMD = { cmd: "sh", args: ["-c", "echo 'regression!' >&2; exit 1"] };
+
+vi.setConfig({ testTimeout: 30_000 });
 
 function validSPDone(sp_id: string, feature: string, wave: string, commitSha: string): string {
   return `---

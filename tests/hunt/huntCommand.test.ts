@@ -128,6 +128,11 @@ function mockRegistry() {
 describe("huntCommand — happy path", () => {
   it("creates branches + worktrees + kickoff.md + sp-done.md + wave-status.md", async () => {
     const repo = initProject();
+    const captured: string[] = [];
+    const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation((chunk: unknown) => {
+      captured.push(String(chunk));
+      return true;
+    });
     try {
       const registry = mockRegistry();
       await huntCommand(repo, "feat-auth", { registry: registry as never });
@@ -145,7 +150,13 @@ describe("huntCommand — happy path", () => {
       const branches = execFileSync("git", ["branch"], { cwd: repo, encoding: "utf-8" });
       expect(branches).toContain("wave-01-sp-database-schema");
       expect(branches).toContain("wave-01-sp-session-tokens");
-    } finally { rmSync(dirname(repo), { recursive: true, force: true }); }
+      const output = captured.join("");
+      expect(output).toContain("matilha gather feat-auth --wave 1");
+      expect(output).not.toContain("not yet shipped");
+    } finally {
+      stdoutSpy.mockRestore();
+      rmSync(dirname(repo), { recursive: true, force: true });
+    }
   });
 });
 

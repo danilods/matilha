@@ -7,6 +7,7 @@ import { fetchAllTemplates } from "./fetchTemplates";
 import { renderTemplate } from "./renderTemplate";
 import { buildClaudeIndex, buildAgentsIndex, buildDesignSpecBody, hasFrontend } from "./archetypeContent";
 import { writeProject } from "./writeProject";
+import { writeToolBootstraps } from "./writeToolBootstraps";
 import { installCompanions } from "./installCompanions";
 import { writeSkills } from "./writeSkills";
 import { createStream } from "../ui/stream";
@@ -92,6 +93,8 @@ export async function initProject(cwd: string, opts: InitOptions = {}): Promise<
   }
 
   const writtenFiles = await writeProject(inputs, rendered, cwd, dryRun);
+  const toolBootstrapFiles = await writeToolBootstraps(tools, cwd, dryRun, inputs.overwriteExisting);
+  writtenFiles.push(...toolBootstrapFiles);
   if (dryRun) {
     s.step("writing files").dryRun(`${writtenFiles.length} files would be written`);
   } else {

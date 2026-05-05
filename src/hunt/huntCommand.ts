@@ -296,6 +296,6 @@ export async function huntCommand(
   // === Bookend ===
   s.footer(
     `wave ${padWave(waveNum)} dispatched. ${wave.sps.length} worktree(s) ready.\n\n` +
-    `next:\n  paste each dispatch command in a new terminal\n  when every SP has SP-DONE.md, run /gather (Wave 3b, not yet shipped)`
+    `next:\n  paste each dispatch command in a new terminal\n  when every SP has SP-DONE.md, run 'matilha gather ${featureSlug} --wave ${waveNum}'`
   );
 }

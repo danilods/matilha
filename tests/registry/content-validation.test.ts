@@ -3,6 +3,7 @@ import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { z } from "zod";
 import { parse as parseYaml } from "yaml";
+import { ARCHETYPES } from "../../src/config";
 
 // Resolves to ~/Documents/Projetos/matilha-skills/ if present (dev mode).
 // When running in CI or without skills repo side-by-side, these tests skip.
@@ -70,6 +71,16 @@ describe.skipIf(!skillsRepoExists)("matilha-skills content validation", () => {
       for (const section of sections) {
         expect(skillContent, `${entry.slug}: missing ${section}`).toContain(section);
       }
+    }
+  });
+
+  it("matilha-init skill documents the current CLI archetype enum", () => {
+    const content = readFileSync(resolve(SKILLS_REPO, "skills/matilha-init/SKILL.md"), "utf-8");
+    for (const archetype of ARCHETYPES) {
+      expect(content, `matilha-init missing archetype ${archetype}`).toContain(archetype);
+    }
+    for (const legacy of ["api-standalone", "web-app", "cli-tool", "mobile", "other"]) {
+      expect(content, `matilha-init still mentions legacy archetype ${legacy}`).not.toContain(legacy);
     }
   });
 
@@ -855,6 +866,19 @@ describe.skipIf(!skillsRepoExists)("matilha-compose body (Wave 5d)", () => {
     // This is the storytelling-mode preamble marker — distinct from pure prose preambles.
     const hasSigil = /#{5,}/.test(content) && /MATILHA/i.test(content);
     expect(hasSigil, "preamble missing matilha sigil (wolf ASCII art + MATILHA label)").toBe(true);
+  });
+
+  it("preamble does not invoke shell hooks for sigil rendering", () => {
+    if (!composeExists) return;
+    const content = readFileSync(composePath, "utf-8");
+    expect(content).not.toMatch(/print-sigil\.sh/);
+    expect(content).not.toMatch(/CLAUDE_PLUGIN_ROOT/);
+    expect(content).not.toMatch(/Bash\(bash/);
+  });
+
+  it("does not ship the deprecated print-sigil shell hook", () => {
+    const hookPath = resolve(SKILLS_REPO, "hooks/print-sigil.sh");
+    expect(existsSync(hookPath)).toBe(false);
   });
 });
 

@@ -60,6 +60,35 @@ describe("projectStatusSchema", () => {
     expect(result.success).toBe(false);
   });
 
+  it("allows zero detected tools for generic or fresh projects", () => {
+    const generic = {
+      schema_version: 1,
+      name: "x",
+      archetype: "cli",
+      created: "2026-04-17T10:00:00Z",
+      last_update: "2026-04-17T10:00:00Z",
+      current_phase: 0,
+      phase_status: "not_started",
+      next_action: "x",
+      tools_detected: [],
+      companion_skills: {
+        impeccable: "not_installed",
+        shadcn: "not_installed",
+        superpowers: "not_installed",
+        typeui: "not_installed"
+      },
+      active_waves: [],
+      completed_waves: [],
+      feature_artifacts: [],
+      recent_decisions: [],
+      pending_decisions: [],
+      blockers: []
+    };
+
+    const result = projectStatusSchema.safeParse(generic);
+    expect(result.success).toBe(true);
+  });
+
   it("rejects schema_version mismatch", () => {
     const invalid = {
       schema_version: 999,

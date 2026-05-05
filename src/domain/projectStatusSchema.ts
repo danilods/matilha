@@ -57,7 +57,7 @@ export const projectStatusSchema = z.object({
   aesthetic_direction: z.enum(AESTHETIC_DIRECTIONS).nullable().optional(),
   design_locked: z.boolean().optional(),
 
-  tools_detected: z.array(z.enum(TOOLS)).min(1),
+  tools_detected: z.array(z.enum(TOOLS)),
 
   companion_skills: z.object({
     impeccable: z.enum(COMPANION_STATUSES),

@@ -63,6 +63,14 @@ describe("writeProject", () => {
     expect(result.find((r) => r.path.endsWith("CLAUDE.md"))?.overwritten).toBe(true);
   });
 
+  it("does not overwrite existing files when inputs.overwriteExisting=false", async () => {
+    writeFileSync(join(tmp, "CLAUDE.md"), "KEEP ME");
+    const result = await writeProject(inputs, rendered, tmp, false);
+    const unchanged = readFileSync(join(tmp, "CLAUDE.md"), "utf-8");
+    expect(unchanged).toBe("KEEP ME");
+    expect(result.find((r) => r.path.endsWith("CLAUDE.md"))?.overwritten).toBe(false);
+  });
+
   it("dryRun=true does not write any files", async () => {
     const result = await writeProject(inputs, rendered, tmp, true);
     expect(result).toHaveLength(4);

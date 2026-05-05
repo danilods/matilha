@@ -26,6 +26,16 @@ export function renderAll(
   providers: readonly Provider[]
 ): ProviderFile[] {
   const uniqueProviders = new Set<Provider>(providers);
-  uniqueProviders.add("universal");
-  return Array.from(uniqueProviders).map((p) => RENDERERS[p](skill));
+  const rendered = Array.from(uniqueProviders).map((p) => RENDERERS[p](skill));
+  rendered.push(renderUniversal(skill));
+
+  const byPath = new Map<string, ProviderFile>();
+  for (const file of rendered) {
+    const existing = byPath.get(file.relativePath);
+    if (!existing || (existing.provider === "universal" && file.provider !== "universal")) {
+      byPath.set(file.relativePath, file);
+    }
+  }
+
+  return Array.from(byPath.values());
 }

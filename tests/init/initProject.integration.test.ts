@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, rmSync, readFileSync, existsSync, mkdirSync } from "node:fs";
+import { mkdtempSync, rmSync, readFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { initProject } from "../../src/init/initProject";
@@ -98,6 +98,20 @@ describe("initProject integration", () => {
     expect(result.writtenFiles).toHaveLength(4);
     expect(result.writtenSkills).toHaveLength(1);
     expect(result.companionOutcomes.get("impeccable")).toBeDefined();
+  });
+
+  it("writes Cursor and Aider bootstrap files when detected", async () => {
+    mkdirSync(join(tmp, ".cursor"));
+    writeFileSync(join(tmp, ".aider.conf.yml"), "read: CONVENTIONS.md\n");
+
+    const result = await initProject(tmp, { dryRun: false });
+
+    expect(result.tools).toEqual(["claude-code", "cursor", "aider"]);
+    expect(existsSync(join(tmp, ".cursor", "rules", "matilha.mdc"))).toBe(true);
+    expect(existsSync(join(tmp, "CONVENTIONS.md"))).toBe(true);
+    expect(existsSync(join(tmp, ".aider.conf.yml"))).toBe(true);
+    expect(result.writtenFiles.some((f) => f.path.endsWith(".cursor/rules/matilha.mdc"))).toBe(true);
+    expect(result.writtenFiles.some((f) => f.path.endsWith("CONVENTIONS.md"))).toBe(true);
   });
 });
 

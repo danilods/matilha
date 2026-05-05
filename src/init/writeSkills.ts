@@ -1,7 +1,7 @@
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { RegistryClient } from "../registry/registryClient";
-import { TOOL_DIR_MAP } from "./detectTools";
+import { TOOL_TARGETS } from "./detectTools";
 import type { Tool } from "./detectTools";
 
 export type WrittenSkill = {
@@ -14,7 +14,7 @@ const UNIVERSAL_DIR = ".agents";
 /**
  * Pull all skills from the registry index and write each to:
  * - .agents/skills/<slug>/SKILL.md (always)
- * - .<toolDir>/skills/<slug>/SKILL.md for each detected tool
+ * - each detected tool's native skill directory when it differs from .agents
  */
 export async function writeSkills(
   detected: readonly Tool[],
@@ -24,9 +24,12 @@ export async function writeSkills(
 ): Promise<WrittenSkill[]> {
   const entries = await client.list();
 
-  const targetDirs: string[] = [UNIVERSAL_DIR];
+  const targetDirs = new Set<string>([UNIVERSAL_DIR]);
   for (const tool of detected) {
-    targetDirs.push(TOOL_DIR_MAP[tool]);
+    const skillDir = TOOL_TARGETS[tool].skillDir;
+    if (skillDir) {
+      targetDirs.add(skillDir);
+    }
   }
 
   const results: WrittenSkill[] = [];

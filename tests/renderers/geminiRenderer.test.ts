@@ -51,8 +51,16 @@ describe("renderAll", () => {
     expect(files.length).toBe(2);
   });
 
-  it("renders all 5 providers when all specified", () => {
+  it("deduplicates universal when Codex uses the .agents skill target", () => {
+    const files = renderAll(skill, ["codex"]);
+    expect(files).toHaveLength(1);
+    expect(files[0]?.provider).toBe("codex");
+    expect(files[0]?.relativePath).toBe(".agents/skills/matilha-den/SKILL.md");
+  });
+
+  it("renders unique skill targets when all providers are specified", () => {
     const files = renderAll(skill, ["universal", "claude-code", "cursor", "codex", "gemini-cli"]);
-    expect(files.length).toBe(5);
+    expect(files.length).toBe(4);
+    expect(files.find((f) => f.relativePath === ".agents/skills/matilha-den/SKILL.md")?.provider).toBe("codex");
   });
 });
