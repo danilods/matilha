@@ -17,12 +17,16 @@ describe("banner", () => {
   });
 
   it("MATILHA_BANNER contains project identity", () => {
-    expect(MATILHA_BANNER).toContain("#################################################################################################");
+    expect(MATILHA_BANNER).toContain("matilha");
+    expect(MATILHA_BANNER).toContain("You lead. Agents hunt.");
+    expect(MATILHA_BANNER).not.toContain("#################################################################################################");
   });
 
-  it("printBanner emits the full ASCII banner", () => {
+  it("printBanner emits the compact ASCII banner", () => {
     printBanner();
-    expect(captured.join("\n")).toContain("#################################################################################################");
+    const out = captured.join("\n");
+    expect(out).toContain("matilha");
+    expect(out).not.toContain("#################################################################################################");
   });
 
   it("printMiniBanner emits a command-scoped header (no ASCII art)", () => {

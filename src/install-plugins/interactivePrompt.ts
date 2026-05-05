@@ -26,7 +26,11 @@ type PresetChoice = PresetName | "core-only" | "custom";
  *   2. If custom → multiselect across companion packs; core always included.
  *   3. Confirm whether to also emit the CLAUDE.md snippet.
  */
-export async function runInteractivePrompt(): Promise<InstallChoice> {
+export type InteractivePromptOptions = {
+  askClaudeMd?: boolean;
+};
+
+export async function runInteractivePrompt(opts: InteractivePromptOptions = {}): Promise<InstallChoice> {
   intro("matilha install-plugins");
 
   const presetChoice = await select<PresetChoice>({
@@ -70,16 +74,20 @@ export async function runInteractivePrompt(): Promise<InstallChoice> {
     selection = PRESETS[presetChoice];
   }
 
-  const withClaudemd = await confirm({
-    message: "Also emit the CLAUDE.md activation-priority snippet? (recommended on new projects)",
-    initialValue: true
-  });
-  if (isCancel(withClaudemd)) {
-    cancel("Cancelled.");
-    process.exit(0);
+  let withClaudemd = false;
+  if (opts.askClaudeMd ?? true) {
+    const answer = await confirm({
+      message: "Also emit the CLAUDE.md activation-priority snippet? (recommended on new projects)",
+      initialValue: true
+    });
+    if (isCancel(answer)) {
+      cancel("Cancelled.");
+      process.exit(0);
+    }
+    withClaudemd = answer as boolean;
   }
 
   outro(`Selected ${selection.length} plugin${selection.length === 1 ? "" : "s"}.`);
 
-  return { selection, withClaudemd: withClaudemd as boolean };
+  return { selection, withClaudemd };
 }

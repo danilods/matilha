@@ -850,7 +850,7 @@ describe.skipIf(!skillsRepoExists)("matilha-compose body (Wave 5d)", () => {
     // Accepts the evolved preamble forms:
     // - "Guidance for the receiving skill" (Wave 5d original verbose)
     // - "Guidance:" (Wave 5d.1 compact italic)
-    // - "Brainstorming adiante" or "Skills entram em cena" (Wave 5d.1 storytelling mode)
+    // - legacy Portuguese storytelling markers from Wave 5d.1
     const hasGuidance =
       /Guidance for the receiving skill/i.test(content) ||
       /Guidance:/i.test(content) ||

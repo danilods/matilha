@@ -15,7 +15,7 @@ const sampleInput: MatilhaSkillInput = {
   requires: [],
   optionalCompanions: ["impeccable", "shadcn-skills", "superpowers"],
 
-  mission: "Conduzir o usuário pela tríade PRD → Stack → Skills/Agents com gates binários.",
+  mission: "Guide the user through the PRD → Stack → Skills/Agents triad with binary gates.",
   sorReference: [
     "methodology/10-prd.md",
     "methodology/20-stack.md",

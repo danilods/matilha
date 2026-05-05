@@ -8,6 +8,7 @@ import { runInteractivePrompt } from "./interactivePrompt";
 import { detectClaudeCli } from "./detectClaudeCli";
 import { executeDeepInstall, type DeepInstallResult } from "./executeDeepInstall";
 import { writeClaudeMd } from "./writeClaudeMd";
+import { installLocalSkills, type LocalInstallScope, type LocalInstallTarget } from "./installLocalSkills";
 
 export type InstallPluginsOptions = {
   full?: boolean;
@@ -16,6 +17,11 @@ export type InstallPluginsOptions = {
   withClaudemd?: boolean;
   clipboard?: boolean; // commander --no-clipboard inverts this → false when flag given
   deep?: boolean; // SP-E: actually install via `claude plugin install` instead of emitting paste block
+  target?: "claude" | LocalInstallTarget;
+  scope?: LocalInstallScope;
+  cwd?: string;
+  homeDir?: string;
+  localPackRoots?: Partial<Record<PackSlug, string>>;
 };
 
 /**
@@ -32,6 +38,8 @@ export type InstallPluginsOptions = {
  */
 export async function installPluginsCommand(opts: InstallPluginsOptions): Promise<void> {
   assertExclusiveSelectors(opts);
+  assertTargetOptions(opts);
+  const target = opts.target ?? "claude";
 
   let selection: readonly PackSlug[];
   let withClaudemd = opts.withClaudemd ?? false;
@@ -56,10 +64,15 @@ export async function installPluginsCommand(opts: InstallPluginsOptions): Promis
     selection = PRESETS[opts.preset as PresetName];
   } else {
     // Interactive path — ignore --with-claudemd flag (prompt asks explicitly).
-    const choice = await runInteractivePrompt();
+    const choice = await runInteractivePrompt({ askClaudeMd: target === "claude" });
     selection = choice.selection;
     withClaudemd = choice.withClaudemd;
     interactive = true;
+  }
+
+  if (target !== "claude") {
+    await runLocalTargetMode(target, selection, opts);
+    return;
   }
 
   if (opts.deep) {
@@ -68,6 +81,57 @@ export async function installPluginsCommand(opts: InstallPluginsOptions): Promis
   }
 
   await runPasteBlockMode(selection, withClaudemd, opts.clipboard !== false, interactive);
+}
+
+function assertTargetOptions(opts: InstallPluginsOptions): void {
+  const target = opts.target ?? "claude";
+  if (!["claude", "codex", "cursor"].includes(target)) {
+    throw new MatilhaUserError({
+      summary: `Unknown install target "${target}"`,
+      context: "running 'matilha install-plugins --target <target>'",
+      problem: "Matilha can install plugins for Claude Code, or local skills for Codex and Cursor.",
+      nextActions: ["Pick one of: claude, codex, cursor."]
+    });
+  }
+
+  if (opts.scope !== undefined && !["user", "project"].includes(opts.scope)) {
+    throw new MatilhaUserError({
+      summary: `Unknown install scope "${opts.scope}"`,
+      context: "running 'matilha install-plugins --scope <scope>'",
+      problem: "Local installs support only user or project scope.",
+      nextActions: ["Pick one of: user, project."]
+    });
+  }
+}
+
+async function runLocalTargetMode(
+  target: LocalInstallTarget,
+  selection: readonly PackSlug[],
+  opts: InstallPluginsOptions
+): Promise<void> {
+  const c = colors();
+  const scope = opts.scope ?? (target === "codex" ? "user" : "project");
+  const result = await installLocalSkills(selection, {
+    target,
+    scope,
+    cwd: opts.cwd ?? process.cwd(),
+    homeDir: opts.homeDir,
+    packRoots: opts.localPackRoots
+  });
+
+  console.log("");
+  console.log(c.bold(`# Installing ${selection.length} ${selection.length === 1 ? "pack" : "packs"} for ${target}`));
+  console.log("");
+  console.log(c.green("✓") + ` ${result.installedSkills.length} skills written to ${result.targetDir}`);
+  if (target === "cursor") {
+    console.log(c.green("✓") + " Cursor rule written to .cursor/rules/matilha.mdc");
+  }
+  console.log("");
+  if (target === "codex") {
+    console.log(c.bold("next:") + "  restart Codex or open a new session so the skill list refreshes.");
+  } else {
+    console.log(c.bold("next:") + "  restart Cursor Agent or open a new chat so the rule and skills refresh.");
+  }
 }
 
 async function runDeepMode(

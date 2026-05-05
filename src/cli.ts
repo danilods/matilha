@@ -180,8 +180,10 @@ program
   .option("--preset <name>", "non-interactive: backend | ux | fullstack | security")
   .option("--with-claudemd", "also handle CLAUDE.md activation-priority snippet (emit in paste mode, merge-or-create in --deep mode)", false)
   .option("--deep", "execute `claude plugin install` for each pack instead of emitting a paste block (requires claude CLI on PATH)", false)
+  .option("--target <target>", "install target: claude | codex | cursor", "claude")
+  .option("--scope <scope>", "local install scope for --target codex|cursor: user | project")
   .option("--no-clipboard", "skip clipboard copy in paste mode; print to stdout only")
-  .action(async (opts: { full: boolean; coreOnly: boolean; preset?: string; withClaudemd: boolean; deep: boolean; clipboard: boolean }) => {
+  .action(async (opts: { full: boolean; coreOnly: boolean; preset?: string; withClaudemd: boolean; deep: boolean; target: string; scope?: string; clipboard: boolean }) => {
     try {
       await installPluginsCommand({
         full: opts.full,
@@ -189,6 +191,8 @@ program
         preset: opts.preset,
         withClaudemd: opts.withClaudemd,
         deep: opts.deep,
+        target: opts.target as "claude" | "codex" | "cursor",
+        scope: opts.scope as "user" | "project" | undefined,
         clipboard: opts.clipboard
       });
     } catch (err) {

@@ -8,24 +8,24 @@ import { RegistryClient } from "../../src/registry/registryClient";
 
 const FIXTURE_10_PRD = `# 10 — PRD
 
-## Gates de entrada
+## Entry Gates
 
-- [ ] Problema identificado
+- [ ] Problem identified
 
-## Gates de saída (binários — só passe adiante quando todos estiverem atendidos)
+## Exit Gates
 
-- [ ] SSoT em markdown único
-- [ ] RFs enumerados
-- [ ] RNFs cobrem performance, segurança, disponibilidade
-- [ ] Persona(s) consolidada(s)
-- [ ] Riscos listados
+- [ ] Single markdown SSoT
+- [ ] Functional requirements enumerated
+- [ ] Non-functional requirements cover performance, security, availability
+- [ ] Persona(s) consolidated
+- [ ] Risks listed
 
 ## Next section
 body
 `;
 
 describe("parseGateKeysFromMethodology", () => {
-  it("extracts bullet count from Gates de saída section", () => {
+  it("extracts bullet count from Exit Gates section", () => {
     const gates = parseGateKeysFromMethodology(FIXTURE_10_PRD);
     expect(gates.length).toBe(5);
   });
@@ -35,9 +35,15 @@ describe("parseGateKeysFromMethodology", () => {
     expect(gates).toEqual([]);
   });
 
-  it("handles accent variations (Gates de saida / saída)", () => {
-    const withoutAccent = FIXTURE_10_PRD.replace("saída", "saida");
-    const gates = parseGateKeysFromMethodology(withoutAccent);
+  it("keeps legacy Portuguese headings supported", () => {
+    const legacyPortuguese = FIXTURE_10_PRD.replace("Exit Gates", "Gates de saída");
+    const gates = parseGateKeysFromMethodology(legacyPortuguese);
+    expect(gates.length).toBe(5);
+  });
+
+  it("handles legacy Portuguese accent variations", () => {
+    const legacyPortuguese = FIXTURE_10_PRD.replace("Exit Gates", "Gates de saida");
+    const gates = parseGateKeysFromMethodology(legacyPortuguese);
     expect(gates.length).toBe(5);
   });
 });
@@ -67,7 +73,7 @@ describe("fetchMethodologyGateKeys", () => {
 describe("warnIfGatesDrift", () => {
   it("does NOT warn when count matches hardcoded", async () => {
     // Hardcoded phase 20 has 6 gates; fixture with 6 bullets should not warn
-    const fixture = `## Gates de saída
+    const fixture = `## Exit Gates
 - [ ] a
 - [ ] b
 - [ ] c
@@ -88,7 +94,7 @@ describe("warnIfGatesDrift", () => {
 
   it("warns when count drifts from hardcoded", async () => {
     // Phase 20 hardcoded has 6; fixture with 3 should warn
-    const fixture = `## Gates de saída
+    const fixture = `## Exit Gates
 - [ ] a
 - [ ] b
 - [ ] c

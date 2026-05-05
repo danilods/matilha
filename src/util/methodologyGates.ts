@@ -5,7 +5,7 @@ export type Phase = 10 | 20 | 30;
 
 /**
  * Fetch a methodology page via RegistryClient.pullRaw and extract gate keys
- * from the "Gates de saída" section. Returns null on any fetch/parse failure
+ * from the "Exit Gates" section. Returns null on any fetch/parse failure
  * (caller decides whether to warn).
  */
 export async function fetchMethodologyGateKeys(
@@ -26,14 +26,14 @@ export async function fetchMethodologyGateKeys(
 }
 
 /**
- * Parse "Gates de saída" section from methodology markdown, returning inferred
+ * Parse the "Exit Gates" section from methodology markdown, returning inferred
  * gate keys from the checklist items. Best-effort heuristic.
  * Returns gate keys converted to snake_case based on content semantics —
  * caller compares with hardcoded PHASE_GATE_KEYS.
  */
 export function parseGateKeysFromMethodology(content: string): string[] {
-  // Find "## Gates de saída" section (tolerant to accent/case)
-  const sectionMatch = /##\s+Gates de sa[íi]da[^\n]*\n([\s\S]*?)(?=\n##\s|$)/i.exec(content);
+  // Prefer the English heading, but keep the original Portuguese heading supported for older methodology pages.
+  const sectionMatch = /##\s+(?:Exit Gates|Gates de sa[íi]da)[^\n]*\n([\s\S]*?)(?=\n##\s|$)/i.exec(content);
   if (!sectionMatch) return [];
   const section = sectionMatch[1] ?? "";
   // Count the bullet/checkbox items as a rough heuristic
