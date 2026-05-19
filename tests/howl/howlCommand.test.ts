@@ -12,7 +12,7 @@ created: "2026-04-19T10:00:00Z"
 last_update: "2026-04-19T10:00:00Z"
 current_phase: 0
 phase_status: not_started
-next_action: "Run /scout"
+next_action: "Run matilha discover"
 tools_detected:
   - claude-code
 companion_skills:
@@ -122,7 +122,7 @@ describe("howlCommand", () => {
     expect(out).toContain("test-proj");
     expect(out).toContain("saas-b2b");
     expect(out).toContain("claude-code");
-    expect(out).toContain("Run /scout");
+    expect(out).toContain("Run matilha discover");
   });
 
   it("prints JSON with --json", async () => {
@@ -161,7 +161,10 @@ describe("howlCommand chunked output (Wave 2f)", () => {
     await howlCommand(tmp, {});
     const out = logs.join("\n");
     expect(out).toContain("Phase");
+    expect(out).toContain("Workflow");
     expect(out).toContain("Activity");
+    expect(out).toContain("field");
+    expect(out).toContain("value");
   });
 
   it("shows 'N of M' gates remaining when phase >= 10", async () => {
@@ -175,16 +178,16 @@ describe("howlCommand chunked output (Wave 2f)", () => {
     writeFileSync(join(tmp, "project-status.md"), VALID);
     await howlCommand(tmp, {});
     const out = logs.join("\n");
-    expect(out).toContain("plan-status");
-    expect(out).toContain("matilha scout");
+    expect(out).toContain("progress");
+    expect(out).toContain("matilha discover");
   });
 
-  it("omits 'matilha scout' hint when phase >= 10", async () => {
+  it("omits 'matilha discover' hint when phase >= 10", async () => {
     writeFileSync(join(tmp, "project-status.md"), PHASE_10_IN_PROGRESS);
     await howlCommand(tmp, {});
     const out = logs.join("\n");
-    expect(out).toContain("matilha plan-status");
-    expect(out).not.toContain("matilha scout");
+    expect(out).toContain("matilha progress");
+    expect(out).not.toContain("matilha discover");
   });
 
   it("counts phase 20 gates correctly ('4 of 6')", async () => {

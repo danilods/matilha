@@ -24,7 +24,7 @@ describe("listCommand", () => {
     const client = makeClient([
       { slug: "methodology/10-prd", name: "Phase 10 PRD", skillPath: "skills/methodology/10-prd/SKILL.md" },
       { slug: "concepts/agentic-patterns", name: "Agentic patterns", skillPath: "skills/concepts/agentic-patterns/SKILL.md" },
-      { slug: "matilha-hunt", name: "/hunt wave dispatch", skillPath: "skills/matilha-hunt/SKILL.md" }
+      { slug: "matilha-split", name: "split wave dispatch", skillPath: "skills/matilha-split/SKILL.md" }
     ]);
     await listCommand({ client, json: false });
     const out = captured.join("\n");
@@ -33,7 +33,7 @@ describe("listCommand", () => {
     expect(out).toContain("Skills");
     expect(out).toContain("methodology/10-prd");
     expect(out).toContain("concepts/agentic-patterns");
-    expect(out).toContain("matilha-hunt");
+    expect(out).toContain("matilha-split");
     expect(out).toContain("pulled from");
   });
 
@@ -55,7 +55,7 @@ describe("listCommand", () => {
   it("--json emits structured output", async () => {
     const client = makeClient([
       { slug: "methodology/10-prd", name: "a", skillPath: "skills/methodology/10-prd/SKILL.md" },
-      { slug: "matilha-hunt", name: "b", skillPath: "skills/matilha-hunt/SKILL.md" }
+      { slug: "matilha-split", name: "b", skillPath: "skills/matilha-split/SKILL.md" }
     ]);
     await listCommand({ client, json: true });
     const parsed = JSON.parse(captured.join(""));

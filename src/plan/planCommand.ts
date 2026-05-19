@@ -28,7 +28,7 @@ export async function planCommand(
   opts: PlanCommandOptions = {}
 ): Promise<void> {
   const s = createStream();
-  printMiniBanner(`matilha plan — ${featureSlug}`, "Phases 10-30 scaffold");
+  printMiniBanner(`matilha spec — ${featureSlug}`, "Phases 10-30 scaffold");
 
   s.section("pre-flight");
 
@@ -36,10 +36,10 @@ export async function planCommand(
     s.step("slug format").fail();
     throw new MatilhaUserError({
       summary: `the feature slug "${featureSlug}" uses characters matilha can't embed in file paths`,
-      context: "matilha plan turns the slug into a file name like docs/matilha/specs/<slug>-spec.md",
+      context: "matilha spec turns the slug into a file name like docs/matilha/specs/<slug>-spec.md",
       problem: "underscores work for some tools but break others; only lowercase letters, numbers, and hyphens are safe.",
       nextActions: [`retry with a slug like 'my-feat' or 'user-auth'`],
-      example: "matilha plan user-auth"
+      example: "matilha spec user-auth"
     });
   }
   s.step("slug format").ok();
@@ -48,12 +48,12 @@ export async function planCommand(
   if (fm.data.current_phase < 10) {
     s.step("current_phase >= 10").fail(`phase is ${fm.data.current_phase}`);
     throw new MatilhaUserError({
-      summary: "your project hasn't finished Phase 00 scout yet — run 'matilha scout' before PRD",
-      context: "matilha plan scaffolds the PRD for Phase 10, which requires Phase 00 discovery complete",
+      summary: "your project hasn't finished Phase 00 discovery yet — run 'matilha discover' before PRD",
+      context: "matilha spec scaffolds the PRD for Phase 10, which requires Phase 00 discovery complete",
       problem: `project-status.md shows current_phase: ${fm.data.current_phase}.`,
       nextActions: [
-        "run 'matilha scout' to complete Phase 00 discovery first",
-        "then retry 'matilha plan <slug>'"
+        "run 'matilha discover' to complete Phase 00 discovery first",
+        "then retry 'matilha spec <slug>'"
       ]
     });
   }
@@ -69,7 +69,7 @@ export async function planCommand(
     s.step("no existing spec").fail();
     throw new MatilhaUserError({
       summary: "a spec already exists for this feature",
-      context: `matilha plan found ${specRelPath} already present`,
+      context: `matilha spec found ${specRelPath} already present`,
       problem: "overwriting it could lose your work.",
       nextActions: [
         "rename the existing spec if you want to keep it",
@@ -157,8 +157,8 @@ export async function planCommand(
   await writeProjectStatus(cwd, fm);
 
   const nextGuidance = ownedBy === "superpowers"
-    ? `open the spec in your IDE. use 'Skill superpowers:brainstorming' or\n  'Skill superpowers:writing-plans' to fill sections 2-12,\n  then 'matilha attest' as each section is done.`
-    : `open the spec in your IDE + AI agent to fill sections 2-12\n  using methodology/10-prd.md as SoR. When each section is done,\n  run 'matilha attest' (interactive picker) to flip the gate.`;
+    ? `open the spec in your IDE. use 'Skill superpowers:brainstorming' or\n  'Skill superpowers:writing-plans' to fill sections 2-12,\n  then 'matilha approve' as each section is done.`
+    : `open the spec in your IDE + AI agent to fill sections 2-12\n  using methodology/10-prd.md as SoR. When each section is done,\n  run 'matilha approve' (interactive picker) to flip the gate.`;
 
   s.footer(
     `plan scaffolded. ready for section-by-section fill.\n\n` +

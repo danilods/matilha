@@ -65,7 +65,7 @@ describe("readWaveStatus", () => {
       } catch (e) {
         if (!(e instanceof MatilhaUserError)) throw e;
         expect(e.matilhaError.summary).toContain("wave-01-status.md");
-        expect(e.matilhaError.nextActions.some((a) => a.includes("matilha hunt"))).toBe(true);
+        expect(e.matilhaError.nextActions.some((a) => a.includes("matilha split"))).toBe(true);
       }
     } finally { rmSync(root, { recursive: true, force: true }); }
   });

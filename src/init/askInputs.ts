@@ -10,7 +10,7 @@ export type InitInputs = {
 };
 
 export async function askInputs(detected: readonly Tool[], existing: boolean): Promise<InitInputs> {
-  intro("matilha init");
+  intro("matilha start");
 
   console.log(`Detected tools: ${detected.length > 0 ? detected.join(", ") : "none"}`);
 

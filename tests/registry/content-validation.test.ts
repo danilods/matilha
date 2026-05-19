@@ -855,17 +855,19 @@ describe.skipIf(!skillsRepoExists)("matilha-compose body (Wave 5d)", () => {
       /Guidance for the receiving skill/i.test(content) ||
       /Guidance:/i.test(content) ||
       /Brainstorming adiante/i.test(content) ||
-      /Skills entram em cena/i.test(content);
+      /Skills entram em cena/i.test(content) ||
+      /Brainstorming ahead/i.test(content) ||
+      /Skills enter as topics surface/i.test(content);
     expect(hasGuidance, "preamble missing continuation/guidance marker for downstream skill").toBe(true);
   });
 
   it("preamble template contains matilha sigil (storytelling mode)", () => {
     if (!composeExists) return;
     const content = readFileSync(composePath, "utf-8");
-    // The canonical matilha sigil: wolf ASCII art with MATILHA wordmark embedded.
+    // The canonical compact sigil: matilha wordmark plus tagline.
     // This is the storytelling-mode preamble marker — distinct from pure prose preambles.
-    const hasSigil = /#{5,}/.test(content) && /MATILHA/i.test(content);
-    expect(hasSigil, "preamble missing matilha sigil (wolf ASCII art + MATILHA label)").toBe(true);
+    const hasSigil = /matilha[\s\S]{0,400}You lead\. Agents hunt\./i.test(content);
+    expect(hasSigil, "preamble missing compact matilha sigil (wordmark + tagline)").toBe(true);
   });
 
   it("preamble does not invoke shell hooks for sigil rendering", () => {

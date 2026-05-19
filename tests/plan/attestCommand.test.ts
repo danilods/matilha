@@ -18,7 +18,7 @@ created: "2026-04-19T10:00:00Z"
 last_update: "2026-04-19T10:00:00Z"
 current_phase: 10
 phase_status: not_started
-next_action: "attest gates"
+next_action: "approve gates"
 tools_detected:
   - claude-code
 companion_skills:
@@ -223,7 +223,7 @@ describe("attestCommand", () => {
     expect(updated).toContain("problem_defined: yes");
   });
 
-  it("emits 'N gates remaining in Phase X' after successful attest", async () => {
+  it("emits 'N gates remaining in Phase X' after successful approval", async () => {
     setup(STATUS_WITH_FEATURE(), SPEC_WITH_SECTION_2_FILLED);
     const logs: string[] = [];
     const origLog = console.log;
@@ -264,7 +264,7 @@ created: "2026-04-19T10:00:00Z"
 last_update: "2026-04-19T10:00:00Z"
 current_phase: 30
 phase_status: in_progress
-next_action: "attest phase 30 gates"
+next_action: "approve phase 30 gates"
 tools_detected:
   - claude-code
 companion_skills:
@@ -314,6 +314,6 @@ phase_30_gates:
     await attestCommand(tmp, { gateKey: "one_blocking_hook" });
     const finalState = readFileSync(join(tmp, "project-status.md"), "utf-8");
     expect(finalState).toContain("one_blocking_hook: yes");
-    expect(finalState).toMatch(/next_action:.*matilha hunt.*Phase 40/);
+    expect(finalState).toMatch(/next_action:.*matilha split.*Phase 40/);
   });
 });

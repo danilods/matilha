@@ -18,7 +18,7 @@ export type AttestOptions = {
 
 type Phase = 10 | 20 | 30;
 
-const PHASE_40_NEXT_ACTION = "run 'matilha hunt <plan-slug>' to decompose into waves (Phase 40)";
+const PHASE_40_NEXT_ACTION = "run 'matilha split <plan-slug>' to decompose into waves (Phase 40)";
 
 function resolvePhase(gateKey: string): Phase | null {
   for (const phase of [10, 20, 30] as const) {
@@ -53,8 +53,8 @@ function nextPhase(phase: Phase): Phase | null {
 }
 
 function nextActionFor(phase: Phase): string {
-  if (phase === 20) return "fill sections on stack decisions; then run 'matilha attest' for Phase 20 gates";
-  if (phase === 30) return "fill sections on skills/agents; then run 'matilha attest' for Phase 30 gates";
+  if (phase === 20) return "fill sections on stack decisions; then run 'matilha approve' for Phase 20 gates";
+  if (phase === 30) return "fill sections on skills/agents; then run 'matilha approve' for Phase 30 gates";
   return PHASE_40_NEXT_ACTION;
 }
 
@@ -66,9 +66,9 @@ function resolveFeature(
   if (artifacts.length === 0) {
     throw new MatilhaUserError({
       summary: "no feature artifacts in project-status.md",
-      context: "matilha attest needs a feature to attest gates against",
+      context: "matilha approve needs a feature to approve gates against",
       problem: "your project-status.md shows zero features.",
-      nextActions: ["run 'matilha plan <slug>' to scaffold your first feature"]
+      nextActions: ["run 'matilha spec <slug>' to scaffold your first feature"]
     });
   }
   if (featureArg) {
@@ -76,9 +76,9 @@ function resolveFeature(
     if (!found) {
       throw new MatilhaUserError({
         summary: `feature '${featureArg}' not found`,
-        context: "matilha attest was looking up a feature by slug",
+        context: "matilha approve was looking up a feature by slug",
         problem: `project-status.md has features: ${artifacts.map((a) => a.name).join(", ")}`,
-        nextActions: ["check the spelling", "run 'matilha plan-status' to see all features"]
+        nextActions: ["check the spelling", "run 'matilha progress' to see all features"]
       });
     }
     return found;
@@ -88,10 +88,10 @@ function resolveFeature(
     const firstName = artifacts[0]?.name ?? "first-feature";
     throw new MatilhaUserError({
       summary: "multiple features found; specify which",
-      context: "matilha attest needs to know which feature to attest against",
+      context: "matilha approve needs to know which feature to approve against",
       problem: `project-status.md has: ${names}`,
       nextActions: ["retry with --feature <slug>"],
-      example: `matilha attest --feature ${firstName}`
+      example: `matilha approve --feature ${firstName}`
     });
   }
   // artifacts.length === 1 at this point (length === 0 already throws above)
@@ -105,7 +105,7 @@ export async function attestCommand(
 ): Promise<void> {
   const fm = await readProjectStatus(cwd);
 
-  printMiniBanner("matilha attest", fm.data.name);
+  printMiniBanner("matilha approve", fm.data.name);
 
   // Resolve gate: CLI arg wins, else TUI
   let gateKey = opts.gateKey;
@@ -114,7 +114,7 @@ export async function attestCommand(
       gateKey = await pickPendingGate(fm.data);
     } catch (err) {
       if (err instanceof Error && /all gates complete/i.test(err.message)) {
-        console.log(pc.green("all gates complete — nothing to attest. advance via 'matilha plan-status' or 'matilha hunt'."));
+        console.log(pc.green("all gates complete — nothing to approve. advance via 'matilha progress' or 'matilha split'."));
         return;
       }
       throw err;
@@ -125,11 +125,11 @@ export async function attestCommand(
   if (phase === null) {
     throw new MatilhaUserError({
       summary: `unknown gate key '${gateKey}'`,
-      context: "matilha attest was resolving the gate to its phase",
+      context: "matilha approve was resolving the gate to its phase",
       problem: "this key isn't in any of Phase 10/20/30 gate lists.",
       nextActions: [
-        "run 'matilha attest' (no args) for an interactive picker of pending gates",
-        "or check 'matilha plan-status' for valid gate names"
+        "run 'matilha approve' (no args) for an interactive picker of pending gates",
+        "or check 'matilha progress' for valid gate names"
       ]
     });
   }
@@ -159,14 +159,14 @@ export async function attestCommand(
     s.step("validation").fail();
     throw new MatilhaUserError({
       summary: "spec section is incomplete",
-      context: `matilha attest was validating gate '${gateKey}' against ${feature.spec}`,
+      context: `matilha approve was validating gate '${gateKey}' against ${feature.spec}`,
       problem: validationReason.toLowerCase(),
       nextActions: [
         "open the spec and fill the section (remove [placeholder] / TODO)",
-        `then retry 'matilha attest ${gateKey}'`,
+        `then retry 'matilha approve ${gateKey}'`,
         "or pass --force to override validation (rarely correct)"
       ],
-      example: "matilha attest " + gateKey
+      example: "matilha approve " + gateKey
     });
   }
 
@@ -205,7 +205,7 @@ export async function attestCommand(
   const remaining = total - done;
 
   console.log("");
-  console.log(pc.green(`gate attested: ${gateKey} → yes`));
+  console.log(pc.green(`gate approved: ${gateKey} → yes`));
   console.log("");
 
   if (advanced !== null) {
@@ -224,6 +224,6 @@ export async function attestCommand(
     console.log(pc.dim(`${remaining} gate${remaining === 1 ? "" : "s"} remaining in Phase ${phase}.`));
     console.log("");
     console.log(pc.bold("next:"));
-    console.log(`  matilha attest   pick the next gate`);
+    console.log(`  matilha approve   pick the next gate`);
   }
 }

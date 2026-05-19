@@ -8,7 +8,7 @@ const FILE_NAME = "project-status.md";
 export async function readProjectStatus(cwd: string): Promise<Frontmatter<ProjectStatus>> {
   const path = join(cwd, FILE_NAME);
   if (!existsSync(path)) {
-    throw new Error(`Not a Matilha project: project-status.md not found at ${path}. Run \`matilha init\` first.`);
+    throw new Error(`Not a Matilha project: project-status.md not found at ${path}. Run \`matilha start\` first.`);
   }
   const raw = readFileSync(path, "utf-8");
   const fm = parseFrontmatter<unknown>(raw);

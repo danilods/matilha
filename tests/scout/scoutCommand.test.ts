@@ -13,7 +13,7 @@ created: "2026-04-19T10:00:00Z"
 last_update: "2026-04-19T10:00:00Z"
 current_phase: 0
 phase_status: not_started
-next_action: "Run /scout"
+next_action: "Run matilha discover"
 tools_detected:
   - claude-code
 companion_skills:
@@ -83,7 +83,7 @@ describe("scoutCommand", () => {
     const updated = readFileSync(join(tmp, "project-status.md"), "utf-8");
     expect(updated).toContain("current_phase: 10");
     expect(updated).toContain("problem_defined: yes");
-    expect(updated).toContain("Run /plan");
+    expect(updated).toContain("Run matilha spec");
   });
 
   it("rejects when current_phase > 0", async () => {
@@ -130,7 +130,7 @@ describe("scoutCommand pre-flight (Wave 2f)", () => {
     }
     expect(caught).toBeInstanceOf(MatilhaUserError);
     const me = (caught as MatilhaUserError).matilhaError;
-    expect(me.nextActions.some((a) => a.includes("matilha init"))).toBe(true);
+    expect(me.nextActions.some((a) => a.includes("matilha start"))).toBe(true);
     expect(me.summary).toMatch(/Matilha project/i);
   });
 
@@ -147,8 +147,8 @@ describe("scoutCommand pre-flight (Wave 2f)", () => {
     expect(caught).toBeInstanceOf(MatilhaUserError);
     const me = (caught as MatilhaUserError).matilhaError;
     expect(me.summary).toMatch(/phase/i);
-    // next actions should mention howl or plan
-    expect(me.nextActions.some((a) => /howl|plan/i.test(a))).toBe(true);
+    // next actions should mention status or spec
+    expect(me.nextActions.some((a) => /status|spec/i.test(a))).toBe(true);
   });
 
   it("emits progress indicator (question N/6)", async () => {

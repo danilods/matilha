@@ -37,7 +37,7 @@ function toTitle(slug: string): string {
 function buildResearchBlock(research: ImportedResearch, date: string): string {
   return `## 1. Research Context (imported)
 
-> Imported from \`${research.filename}\` on ${date} by \`matilha plan --import-research\`.
+> Imported from \`${research.filename}\` on ${date} by \`matilha spec --import-research\`.
 > Content preserved verbatim including citations.
 
 <!-- MATILHA_RESEARCH_START -->

@@ -9,6 +9,7 @@ import { readWaveStatus } from "./waveStatusReader";
 import { readAndValidateSPDone } from "./spDoneReader";
 import { mergeBranch, runTests, type RunTestsOptions } from "./mergeExecutor";
 import { cleanupSP } from "./cleanupExecutor";
+import { emitTaskCompletedEvent } from "../events/outbox";
 import {
   markWaveStarted,
   markSPMerged,
@@ -20,6 +21,7 @@ export type GatherOptions = {
   wave?: number;
   dryRun?: boolean;
   cleanup?: boolean;
+  events?: boolean;
   testCmd?: RunTestsOptions;
 };
 
@@ -35,7 +37,9 @@ export async function gatherCommand(
 ): Promise<void> {
   const s = createStream();
   const waveNum = opts.wave ?? 1;
-  printMiniBanner(`matilha gather — ${featureSlug}`, `Phase 40 wave ${padWave(waveNum)} merge`);
+  const cleanupAfterSuccess = opts.cleanup ?? true;
+  const emitEvents = opts.events ?? true;
+  printMiniBanner(`matilha merge — ${featureSlug}`, `Phase 40 wave ${padWave(waveNum)} merge`);
 
   // === Pre-flight ===
   s.section("pre-flight");
@@ -45,7 +49,7 @@ export async function gatherCommand(
 
   if (wave.status === "completed") {
     s.step("wave already completed").ok();
-    s.footer(`wave ${padWave(waveNum)} already gathered. no-op. next: 'matilha attest' to advance phase.`);
+    s.footer(`wave ${padWave(waveNum)} already merged. no-op. next: 'matilha approve' to advance phase.`);
     return;
   }
 
@@ -53,12 +57,12 @@ export async function gatherCommand(
     s.step("wave marked failed").fail();
     throw new MatilhaUserError({
       summary: `wave ${padWave(waveNum)} halted on a prior run — manual recovery required before retry`,
-      context: `matilha gather found wave-status.status=failed for wave ${waveNum}`,
-      problem: `a previous /gather invocation halted (merge conflict or regression). State is preserved for inspection.`,
+      context: `matilha merge found wave-status.status=failed for wave ${waveNum}`,
+      problem: `a previous merge invocation halted (merge conflict or regression). State is preserved for inspection.`,
       nextActions: [
         `inspect: cat ${waveStatusPath.replace(cwd + "/", "")}`,
         `resolve the failed SP manually (fix code, rerun tests, or revert via 'git reset --hard <sha>')`,
-        `then reset the failed SP entry in wave-status back to 'pending' and re-run 'matilha gather ${featureSlug} --wave ${waveNum}'`
+        `then reset the failed SP entry in wave-status back to 'pending' and re-run 'matilha merge ${featureSlug} --wave ${waveNum}'`
       ]
     });
   }
@@ -67,13 +71,13 @@ export async function gatherCommand(
   if (branch.startsWith("wave-") && branch.includes("-sp-")) {
     s.step("on integration branch").fail(branch);
     throw new MatilhaUserError({
-      summary: `matilha gather must run from the integration branch, not an SP branch`,
-      context: `matilha gather was checking the current branch`,
-      problem: `current branch '${branch}' looks like an SP branch; gather merges SPs INTO the integration branch.`,
+      summary: `matilha merge must run from the integration branch, not an SP branch`,
+      context: `matilha merge was checking the current branch`,
+      problem: `current branch '${branch}' looks like an SP branch; merge pulls SPs INTO the integration branch.`,
       nextActions: [
         `git checkout main`,
         `or switch to your integration branch`,
-        `then re-run 'matilha gather ${featureSlug} --wave ${waveNum}'`
+        `then re-run 'matilha merge ${featureSlug} --wave ${waveNum}'`
       ]
     });
   }
@@ -83,7 +87,7 @@ export async function gatherCommand(
     s.step("working tree clean").fail();
     throw new MatilhaUserError({
       summary: `uncommitted changes on current branch`,
-      context: `matilha gather merges SP branches onto ${branch}`,
+      context: `matilha merge merges SP branches onto ${branch}`,
       problem: `uncommitted changes would mix with merge commits.`,
       nextActions: [
         `commit your changes: git add -A && git commit -m '<message>'`,
@@ -94,14 +98,15 @@ export async function gatherCommand(
   s.step("working tree clean").ok();
 
   s.section("validating SP-DONE gates");
+  const spDoneById = new Map<string, ReturnType<typeof readAndValidateSPDone>>();
   for (const spId of wave.merge_order) {
     const entry = wave.sps[spId];
     if (!entry) {
       throw new MatilhaUserError({
         summary: `merge_order references unknown SP ${spId}`,
-        context: `matilha gather was walking wave.merge_order`,
+        context: `matilha merge was walking wave.merge_order`,
         problem: `SP ${spId} listed in merge_order but missing from wave.sps.`,
-        nextActions: ["fix wave-status frontmatter or re-run 'matilha hunt <slug> --force'"]
+        nextActions: ["fix wave-status frontmatter or re-run 'matilha split <slug> --force'"]
       });
     }
     if (entry.status === "completed") {
@@ -111,15 +116,16 @@ export async function gatherCommand(
     if (entry.status === "failed") {
       throw new MatilhaUserError({
         summary: `${spId} has status=failed in wave-status — manual recovery required`,
-        context: `matilha gather was pre-flighting SP readiness`,
-        problem: `${spId} failed on a prior /gather run. /gather refuses to auto-retry.`,
+        context: `matilha merge was pre-flighting SP readiness`,
+        problem: `${spId} failed on a prior merge run. merge refuses to auto-retry.`,
         nextActions: [
           `inspect the failure state in ${waveStatusPath.replace(cwd + "/", "")}`,
-          `once resolved, edit the SP entry's status back to 'pending' and re-run gather`
+          `once resolved, edit the SP entry's status back to 'pending' and re-run matilha merge`
         ]
       });
     }
-    readAndValidateSPDone(entry.worktree, { sp_id: spId, feature: featureSlug, wave: wave.wave });
+    const spDone = readAndValidateSPDone(entry.worktree, { sp_id: spId, feature: featureSlug, wave: wave.wave });
+    spDoneById.set(spId, spDone);
     s.step(spId).ok("SP-DONE gates pass");
   }
 
@@ -133,7 +139,8 @@ export async function gatherCommand(
         s.step(spId).dryRun(`would merge ${entry.branch} (no-ff) + run tests`);
       }
     }
-    s.step("cleanup").dryRun(opts.cleanup ? "would remove worktrees + delete branches" : "skipped (no --cleanup)");
+    s.step("cleanup").dryRun(cleanupAfterSuccess ? "would remove worktrees + delete branches" : "skipped (--keep-worktrees)");
+    s.step("events").dryRun(emitEvents ? "would write task.completed events" : "skipped (--no-events)");
     s.footer("dry-run complete. no mutations performed.");
     return;
   }
@@ -156,22 +163,22 @@ export async function gatherCommand(
         s.step(spId).fail(`conflict in ${mergeResult.files.length} file(s)`);
         throw new MatilhaUserError({
           summary: `${spId} merge conflict against ${branch}`,
-          context: `matilha gather was merging ${entry.branch} into ${branch}`,
+          context: `matilha merge was merging ${entry.branch} into ${branch}`,
           problem: `git merge --no-ff produced conflicts in: ${mergeResult.files.join(", ")}. gather ran 'git merge --abort' to restore clean state.`,
           nextActions: [
             `resolve the conflict manually: git merge --no-ff ${entry.branch} (then fix files)`,
-            `or move the overlap to a later wave by editing the plan and re-running 'matilha hunt ${featureSlug} --force --wave ${waveNum}'`
+            `or move the overlap to a later wave by editing the plan and re-running 'matilha split ${featureSlug} --force --wave ${waveNum}'`
           ]
         });
       }
       s.step(spId).fail(`git error: ${mergeResult.error.slice(0, 120)}`);
       throw new MatilhaUserError({
         summary: `${spId} merge failed with an unexpected git error`,
-        context: `matilha gather was merging ${entry.branch}`,
+        context: `matilha merge was merging ${entry.branch}`,
         problem: mergeResult.error,
         nextActions: [
           `inspect git state: git status`,
-          `resolve manually then re-run 'matilha gather ${featureSlug} --wave ${waveNum}'`
+          `resolve manually then re-run 'matilha merge ${featureSlug} --wave ${waveNum}'`
         ]
       });
     }
@@ -182,17 +189,31 @@ export async function gatherCommand(
       s.step(`${spId} regression`).fail();
       throw new MatilhaUserError({
         summary: `${spId} regression failed after merge`,
-        context: `matilha gather ran the test suite after merging ${entry.branch}`,
+        context: `matilha merge ran the test suite after merging ${entry.branch}`,
         problem: `test command failed; output:\n${testResult.output.slice(0, 800)}`,
         nextActions: [
           `inspect the failure: re-run the test command manually in ${cwd}`,
           `revert this merge if needed: git reset --hard ${beforeSha.trim()}`,
-          `then fix the regression and re-run 'matilha gather ${featureSlug} --wave ${waveNum}'`
+          `then fix the regression and re-run 'matilha merge ${featureSlug} --wave ${waveNum}'`
         ]
       });
     }
 
     markSPMerged(cwd, waveNum, spId);
+    if (emitEvents) {
+      const spDone = spDoneById.get(spId);
+      if (spDone) {
+        const eventResult = emitTaskCompletedEvent(cwd, {
+          featureSlug,
+          wave: wave.wave,
+          spId,
+          plan: wave.plan,
+          branch: entry.branch,
+          spDone
+        });
+        s.step(`${spId} event`).ok(eventResult.status === "written" ? "task.completed written" : "task.completed already exists");
+      }
+    }
     s.step(spId).ok(`merged + tests passed`);
   }
 
@@ -200,7 +221,7 @@ export async function gatherCommand(
   s.section("finalized");
   s.step("wave-status").ok("completed + regression passed");
 
-  if (opts.cleanup) {
+  if (cleanupAfterSuccess) {
     s.section("cleanup");
     const { wave: finalWave } = readWaveStatus(cwd, waveNum);
     let removedCount = 0;
@@ -217,10 +238,10 @@ export async function gatherCommand(
   }
 
   s.footer(
-    `wave ${padWave(waveNum)} gathered. ${wave.merge_order.length} SP(s) merged. regression: passed.\n\n` +
+    `wave ${padWave(waveNum)} merged. ${wave.merge_order.length} SP(s) merged. regression: passed.\n\n` +
     `next:\n` +
-    `  run 'matilha howl' to see project state\n` +
-    `  attest phase-40 when the wave is settled: 'matilha attest phase-40-gate'\n` +
+    `  run 'matilha status' to see project state\n` +
+    `  approve phase-40 when the wave is settled: 'matilha approve phase-40-gate'\n` +
     `  /review (Wave 3c) will consume wave-status once it ships`
   );
 }

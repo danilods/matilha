@@ -29,9 +29,9 @@ Merge order (from plan.md frontmatter): ${wave.merge_order.join(" → ")}
 
 ## Next action
 
-Open terminals and paste the dispatch commands printed by \`matilha hunt\`.
-Use \`matilha howl\` to see overall project state.
-Use \`/gather\` (Wave 3b) when every SP has written SP-DONE.md.
+Open terminals and paste the dispatch commands printed by \`matilha split\`.
+Use \`matilha status\` to see overall project state.
+Use \`matilha merge\` when every SP has written SP-DONE.md.
 `;
 
   mkdirSync(dirname(absPath), { recursive: true });

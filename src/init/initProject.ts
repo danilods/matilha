@@ -8,6 +8,7 @@ import { renderTemplate } from "./renderTemplate";
 import { buildClaudeIndex, buildAgentsIndex, buildDesignSpecBody, hasFrontend } from "./archetypeContent";
 import { writeProject } from "./writeProject";
 import { writeToolBootstraps } from "./writeToolBootstraps";
+import { compactProviderTemplates, writeContextIndex } from "./contextControl";
 import { installCompanions } from "./installCompanions";
 import { writeSkills } from "./writeSkills";
 import { createStream } from "../ui/stream";
@@ -48,7 +49,7 @@ export async function initProject(cwd: string, opts: InitOptions = {}): Promise<
   const startedAt = Date.now();
   const s = createStream();
 
-  printMiniBanner("matilha init", "bootstrap a Matilha project");
+  printMiniBanner("matilha start", "bootstrap a Matilha project");
 
   // Phase 1: discovery
   s.section("phase 1 / 4 — discovery");
@@ -92,7 +93,9 @@ export async function initProject(cwd: string, opts: InitOptions = {}): Promise<
     s.step(`rendering ${name}`).ok();
   }
 
-  const writtenFiles = await writeProject(inputs, rendered, cwd, dryRun);
+  const compactedRendered = compactProviderTemplates(rendered, inputs, tools);
+  const writtenFiles = await writeProject(inputs, compactedRendered, cwd, dryRun);
+  writtenFiles.push(await writeContextIndex(inputs, tools, cwd, dryRun, inputs.overwriteExisting));
   const toolBootstrapFiles = await writeToolBootstraps(tools, cwd, dryRun, inputs.overwriteExisting);
   writtenFiles.push(...toolBootstrapFiles);
   if (dryRun) {
@@ -122,8 +125,8 @@ export async function initProject(cwd: string, opts: InitOptions = {}): Promise<
     `  companions   ${companions.length} detected\n` +
     `  skills       ${writtenSkills.length} written\n\n` +
     `next:\n` +
-    `  run 'matilha scout' to begin Phase 00 discovery\n` +
-    `  or run 'matilha howl' anytime to see state`
+    `  run 'matilha discover' to begin Phase 00 discovery\n` +
+    `  or run 'matilha status' anytime to see state`
   );
 
   return {

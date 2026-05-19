@@ -12,7 +12,7 @@ created: "2026-04-19T10:00:00Z"
 last_update: "2026-04-19T10:00:00Z"
 current_phase: 10
 phase_status: not_started
-next_action: "attest gates"
+next_action: "approve gates"
 tools_detected:
   - claude-code
 companion_skills:
@@ -90,7 +90,7 @@ describe("statusCommand", () => {
     writeFileSync(join(tmp, "project-status.md"), STATUS_NO_FEATURES);
     await statusCommand(tmp, {});
     const out = logs.join("\n");
-    expect(out).toMatch(/No feature artifacts|matilha plan/i);
+    expect(out).toMatch(/No feature artifacts|matilha spec/i);
   });
 
   it("filters by --feature slug", async () => {
@@ -155,12 +155,12 @@ describe("statusCommand Wave 2f output", () => {
     expect(out).not.toMatch(/more; use --all to see/);
   });
 
-  it("emits bookend with 'matilha attest' next action when gates pending", async () => {
+  it("emits bookend with 'matilha approve' next action when gates pending", async () => {
     writeFileSync(join(tmp, "project-status.md"), STATUS_WITH_FEATURE);
     await statusCommand(tmp, {});
     const out = logs.join("\n");
     expect(out).toContain("next:");
-    expect(out).toContain("matilha attest");
+    expect(out).toContain("matilha approve");
   });
 
   it("empty feature_artifacts triggers 'scaffold your first feature' bookend", async () => {
@@ -168,6 +168,6 @@ describe("statusCommand Wave 2f output", () => {
     await statusCommand(tmp, {});
     const out = logs.join("\n");
     expect(out).toContain("no feature artifacts yet");
-    expect(out).toContain("matilha plan <slug>");
+    expect(out).toContain("matilha spec <slug>");
   });
 });

@@ -1,6 +1,6 @@
 // tests/gather/gatherCommand.test.ts
 import { describe, it, expect, vi } from "vitest";
-import { mkdtempSync, writeFileSync, readFileSync, mkdirSync, existsSync, rmSync } from "node:fs";
+import { mkdtempSync, writeFileSync, readFileSync, mkdirSync, existsSync, rmSync, readdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { tmpdir } from "node:os";
 import { execFileSync } from "node:child_process";
@@ -101,8 +101,8 @@ review_report: null
 }
 
 describe("gatherCommand — happy path", () => {
-  it("merges both SPs in order, marks wave completed, regression passed", async () => {
-    const { repo } = setupGatherable();
+  it("merges both SPs in order, marks wave completed, regression passed, and cleans worktrees by default", async () => {
+    const { repo, wtA, wtB } = setupGatherable();
     try {
       await gatherCommand(repo, "feat-auth", { wave: 1, testCmd: PASS_TEST_CMD });
       const { wave } = readWaveStatus(repo, 1);
@@ -110,6 +110,13 @@ describe("gatherCommand — happy path", () => {
       expect(wave.regression_status).toBe("passed");
       expect(wave.sps.SP1!.status).toBe("completed");
       expect(wave.sps.SP2!.status).toBe("completed");
+      expect(existsSync(wtA)).toBe(false);
+      expect(existsSync(wtB)).toBe(false);
+      const outboxFiles = readdirSync(join(repo, "docs", "matilha", "events", "outbox"));
+      expect(outboxFiles).toHaveLength(2);
+      const firstEvent = JSON.parse(readFileSync(join(repo, "docs", "matilha", "events", "outbox", outboxFiles[0]!), "utf-8"));
+      expect(firstEvent.event).toBe("task.completed");
+      expect(firstEvent.external_id).toMatch(/^feat-auth-SP[12]$/);
       const log = execFileSync("git", ["log", "--pretty=%s", "-5"], { cwd: repo, encoding: "utf-8" });
       expect(log).toContain("Merge");
     } finally { rmSync(dirname(repo), { recursive: true, force: true }); }
@@ -197,6 +204,7 @@ describe("gatherCommand — --dry-run", () => {
       expect(afterLog).toBe(beforeLog);
       const { wave } = readWaveStatus(repo, 1);
       expect(wave.status).toBe("pending"); // untouched
+      expect(existsSync(join(repo, "docs", "matilha", "events", "outbox"))).toBe(false);
     } finally { rmSync(dirname(repo), { recursive: true, force: true }); }
   });
 });
@@ -211,6 +219,18 @@ describe("gatherCommand — --cleanup", () => {
       const branches = execFileSync("git", ["branch"], { cwd: repo, encoding: "utf-8" });
       expect(branches).not.toContain("wave-01-sp-a");
       expect(branches).not.toContain("wave-01-sp-b");
+    } finally { rmSync(dirname(repo), { recursive: true, force: true }); }
+  });
+
+  it("keeps worktrees when cleanup is disabled", async () => {
+    const { repo, wtA, wtB } = setupGatherable();
+    try {
+      await gatherCommand(repo, "feat-auth", { wave: 1, cleanup: false, testCmd: PASS_TEST_CMD });
+      expect(existsSync(wtA)).toBe(true);
+      expect(existsSync(wtB)).toBe(true);
+      const branches = execFileSync("git", ["branch"], { cwd: repo, encoding: "utf-8" });
+      expect(branches).toContain("wave-01-sp-a");
+      expect(branches).toContain("wave-01-sp-b");
     } finally { rmSync(dirname(repo), { recursive: true, force: true }); }
   });
 });

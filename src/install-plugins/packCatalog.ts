@@ -37,7 +37,7 @@ export const PACK_CATALOG: readonly PackCatalogEntry[] = [
     marketplaceUrl: "danilods/matilha-skills",
     title: "matilha (core)",
     skillCount: 11,
-    description: "Core methodology — compose gateway + scout/plan/hunt/gather/howl/design/den/pack/init/review."
+    description: "Core methodology — compose gateway + discover/spec/split/merge/status/design/den/pack/start/review."
   },
   {
     slug: "matilha-ux-pack",

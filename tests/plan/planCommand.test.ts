@@ -14,7 +14,7 @@ created: "2026-04-19T10:00:00Z"
 last_update: "2026-04-19T10:00:00Z"
 current_phase: 10
 phase_status: not_started
-next_action: "Run /plan"
+next_action: "Run matilha spec"
 tools_detected:
   - claude-code
 companion_skills:
@@ -121,7 +121,7 @@ describe("planCommand", () => {
   it("rejects when current_phase < 10", async () => {
     const statusPhase0 = VALID_STATUS_PHASE_10.replace("current_phase: 10", "current_phase: 0");
     writeFileSync(join(tmp, "project-status.md"), statusPhase0);
-    await expect(planCommand(tmp, "feat-early", { registryClient: makeMockClient() })).rejects.toThrow(/scout|Phase 00|before PRD/i);
+    await expect(planCommand(tmp, "feat-early", { registryClient: makeMockClient() })).rejects.toThrow(/discover|Phase 00|before PRD/i);
   });
 
   it("rejects when project-status.md missing", async () => {

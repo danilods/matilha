@@ -19,11 +19,11 @@ export async function pickPendingGate(status: ProjectStatus): Promise<string> {
   }
 
   if (groups.length === 0) {
-    throw new Error("all gates complete — nothing to attest");
+    throw new Error("all gates complete — nothing to approve");
   }
 
   return pick({
-    message: "choose a gate to attest",
+    message: "choose a gate to approve",
     groups,
     hint: "arrows + enter to select"
   });

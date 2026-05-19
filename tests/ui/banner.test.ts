@@ -30,9 +30,9 @@ describe("banner", () => {
   });
 
   it("printMiniBanner emits a command-scoped header (no ASCII art)", () => {
-    printMiniBanner("matilha scout", "Phase 00 Discovery");
+    printMiniBanner("matilha discover", "Phase 00 Discovery");
     const out = captured.join("\n");
-    expect(out).toContain("matilha scout");
+    expect(out).toContain("matilha discover");
     expect(out).toContain("Phase 00 Discovery");
     expect(out).not.toContain("███"); // no ASCII art blocks
   });

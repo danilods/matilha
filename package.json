@@ -1,7 +1,7 @@
 {
   "name": "matilha",
-  "version": "1.5.0",
-  "description": "You lead. Agents hunt. Methodology harness CLI — deterministic engine for init/scout/plan/hunt/gather/howl phases. Twin to the matilha-skills plugin ecosystem (7 companion packs, 139 skills total).",
+  "version": "1.6.0",
+  "description": "You lead. Agents hunt. Methodology harness CLI — deterministic engine for guided AI-assisted software development. Twin to the matilha-skills plugin ecosystem (7 companion packs, 146 skills total).",
   "keywords": [
     "methodology",
     "agentic",

@@ -52,7 +52,7 @@ export async function statusCommand(cwd: string, opts: StatusOptions = {}): Prom
     console.log(pc.dim("no feature artifacts yet."));
     console.log("");
     console.log(pc.bold("next:"));
-    console.log(`  matilha plan <slug>   scaffold your first feature`);
+    console.log(`  matilha spec <slug>   scaffold your first feature`);
     return;
   }
 
@@ -99,10 +99,10 @@ export async function statusCommand(cwd: string, opts: StatusOptions = {}): Prom
   console.log(pc.bold("next:"));
   if (currentPhasePending > 0) {
     console.log(`  ${currentPhasePending} gate(s) pending in Phase ${s.current_phase}`);
-    console.log(`  matilha attest   pick a gate to flip (interactive)`);
+    console.log(`  matilha approve   pick a gate to flip (interactive)`);
   } else if (totalPending > 0) {
-    console.log(`  current phase complete; advance by attesting remaining gates in later phases`);
-    console.log(`  matilha attest`);
+    console.log(`  current phase complete; advance by approving remaining gates in later phases`);
+    console.log(`  matilha approve`);
   } else {
     console.log(`  all gates complete — ready to progress!`);
   }

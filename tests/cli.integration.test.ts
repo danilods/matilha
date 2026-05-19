@@ -39,4 +39,37 @@ describe("CLI integration", () => {
     });
     expect(output).toContain("init");
   });
+
+  it("--help exposes didactic workflow commands with legacy aliases", () => {
+    const output = execFileSync("node", [cliPath, "--help"], {
+      encoding: "utf-8"
+    });
+
+    for (const command of [
+      "start|init",
+      "status|howl",
+      "discover|scout",
+      "spec|plan",
+      "approve|attest",
+      "progress|plan-status",
+      "split|hunt",
+      "merge|gather",
+      "jira",
+      "install|install-plugins"
+    ]) {
+      expect(output).toContain(command);
+    }
+  });
+
+  it("legacy and didactic command names both expose help", () => {
+    const didactic = execFileSync("node", [cliPath, "status", "--help"], {
+      encoding: "utf-8"
+    });
+    const legacy = execFileSync("node", [cliPath, "howl", "--help"], {
+      encoding: "utf-8"
+    });
+
+    expect(didactic).toContain("Show Matilha project state");
+    expect(legacy).toContain("Show Matilha project state");
+  });
 });

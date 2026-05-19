@@ -34,11 +34,11 @@ export function validateDisjunction(sps: ParsedSP[]): DisjunctionResult {
       const lines = violations.map((v) => `  ${v.sps.join(" and ")} both touch: ${v.file}`);
       return {
         summary: `disjunction violated in wave ${waveId}`,
-        context: "matilha hunt was validating that intra-wave SPs touch disjoint file sets",
+        context: "matilha split was validating that intra-wave SPs touch disjoint file sets",
         problem: `${violations.length} overlap${violations.length === 1 ? "" : "s"} found:\n${lines.join("\n")}`,
         nextActions: [
           "edit the plan and move one SP to a later wave",
-          "or pass --allow-overlap to bypass (merge conflict risk in /gather)"
+          "or pass --allow-overlap to bypass (merge conflict risk in matilha merge)"
         ]
       };
     }

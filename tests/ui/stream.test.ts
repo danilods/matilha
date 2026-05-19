@@ -19,9 +19,9 @@ describe("stream", () => {
 
   it("emits a header via intro()", () => {
     const s = createStream();
-    s.intro("matilha init", "bootstrap a Matilha project");
+    s.intro("matilha start", "bootstrap a Matilha project");
     const out = captured.join("");
-    expect(out).toContain("matilha init");
+    expect(out).toContain("matilha start");
     expect(out).toContain("bootstrap a Matilha project");
   });
 
@@ -66,7 +66,7 @@ describe("stream", () => {
 
   it("footer() emits bookend text", () => {
     const s = createStream();
-    s.footer("matilha is ready. next: run 'matilha scout'");
+    s.footer("matilha is ready. next: run 'matilha discover'");
     expect(captured.join("")).toContain("matilha is ready");
   });
 

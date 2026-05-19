@@ -16,7 +16,13 @@ const spDoneSchema = z.object({
   tests: z.object({
     passed: z.literal(true),
     count: z.number().int().positive()
-  })
+  }),
+  tracking: z.object({
+    story_points: z.number().nonnegative().optional(),
+    worklog: z.string().min(1).optional(),
+    comment_markdown: z.string().min(1).optional(),
+    observations: z.array(z.string().min(1)).default([])
+  }).default({})
 });
 
 export type SPDone = z.infer<typeof spDoneSchema>;
@@ -30,7 +36,7 @@ export type ExpectedContext = {
 function matilhaErrorFor(sp_id: string, summary: string, problem: string, nextActions: string[]): MatilhaUserError {
   return new MatilhaUserError({
     summary: `${sp_id} ${summary}`,
-    context: `matilha gather was validating SP-DONE.md gates for ${sp_id}`,
+    context: `matilha merge was validating SP-DONE.md gates for ${sp_id}`,
     problem,
     nextActions
   });
@@ -60,7 +66,7 @@ export function readAndValidateSPDone(worktreePath: string, expected: ExpectedCo
       `${path} lacks a YAML frontmatter block between '---' fences.`,
       [
         `open the file and restore the frontmatter from templates/sp-done.md.tmpl`,
-        `or re-dispatch the SP: matilha hunt <slug> --force --wave <N>`
+        `or re-dispatch the SP: matilha split <slug> --force --wave <N>`
       ]
     );
   }

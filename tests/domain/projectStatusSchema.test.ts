@@ -11,7 +11,7 @@ describe("projectStatusSchema", () => {
       last_update: "2026-04-17T10:00:00Z",
       current_phase: 0,
       phase_status: "not_started",
-      next_action: "Run /scout to begin",
+      next_action: "Run matilha discover to begin",
       tools_detected: ["claude-code"],
       companion_skills: {
         impeccable: "not_installed",

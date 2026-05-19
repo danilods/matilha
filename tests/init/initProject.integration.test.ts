@@ -85,17 +85,19 @@ describe("initProject integration", () => {
     expect(existsSync(join(tmp, "AGENTS.md"))).toBe(true);
     expect(existsSync(join(tmp, "project-status.md"))).toBe(true);
     expect(existsSync(join(tmp, "design-spec.md"))).toBe(true);
+    expect(existsSync(join(tmp, "docs", "matilha", "context.md"))).toBe(true);
     expect(existsSync(join(tmp, ".claude", "skills", "matilha-init", "SKILL.md"))).toBe(true);
     expect(existsSync(join(tmp, ".agents", "skills", "matilha-init", "SKILL.md"))).toBe(true);
 
     const claude = readFileSync(join(tmp, "CLAUDE.md"), "utf-8");
     expect(claude).toContain("test-proj");
     expect(claude).toContain("saas-b2b");
+    expect(claude).toContain("docs/matilha/context.md");
 
     const pstatus = readFileSync(join(tmp, "project-status.md"), "utf-8");
     expect(pstatus).toContain("claude-code");  // tools_detected_yaml rendered
 
-    expect(result.writtenFiles).toHaveLength(4);
+    expect(result.writtenFiles).toHaveLength(5);
     expect(result.writtenSkills).toHaveLength(1);
     expect(result.companionOutcomes.get("impeccable")).toBeDefined();
   });
@@ -201,7 +203,7 @@ describe("initProject streaming (Wave 2f)", () => {
   it("emits bookend with next action suggestion", async () => {
     await initProject(tmp, { dryRun: true });
     const out = getOutput();
-    expect(out).toContain("run 'matilha scout'");
+    expect(out).toContain("run 'matilha discover'");
   });
 
   it("dry-run mode uses [dry-run] marker, no disk writes", async () => {

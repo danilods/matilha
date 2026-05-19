@@ -25,7 +25,7 @@ export type InstallPluginsOptions = {
 };
 
 /**
- * `matilha install-plugins` entry point.
+ * `matilha install` entry point.
  *
  * Default (paste-block) mode: emits `/plugin install` lines to stdout and
  * copies them to the clipboard for the user to paste into Claude Code.
@@ -53,7 +53,7 @@ export async function installPluginsCommand(opts: InstallPluginsOptions): Promis
     if (!isPresetName(opts.preset)) {
       throw new MatilhaUserError({
         summary: `Unknown preset "${opts.preset}"`,
-        context: "running 'matilha install-plugins --preset <name>'",
+        context: "running 'matilha install --preset <name>'",
         problem: `Preset "${opts.preset}" is not one of the four supported names.`,
         nextActions: [
           `Pick one of: ${PRESET_NAMES.join(", ")}.`,
@@ -88,7 +88,7 @@ function assertTargetOptions(opts: InstallPluginsOptions): void {
   if (!["claude", "codex", "cursor"].includes(target)) {
     throw new MatilhaUserError({
       summary: `Unknown install target "${target}"`,
-      context: "running 'matilha install-plugins --target <target>'",
+      context: "running 'matilha install --target <target>'",
       problem: "Matilha can install plugins for Claude Code, or local skills for Codex and Cursor.",
       nextActions: ["Pick one of: claude, codex, cursor."]
     });
@@ -97,7 +97,7 @@ function assertTargetOptions(opts: InstallPluginsOptions): void {
   if (opts.scope !== undefined && !["user", "project"].includes(opts.scope)) {
     throw new MatilhaUserError({
       summary: `Unknown install scope "${opts.scope}"`,
-      context: "running 'matilha install-plugins --scope <scope>'",
+      context: "running 'matilha install --scope <scope>'",
       problem: "Local installs support only user or project scope.",
       nextActions: ["Pick one of: user, project."]
     });
@@ -271,7 +271,7 @@ function assertExclusiveSelectors(opts: InstallPluginsOptions): void {
   if (set.length > 1) {
     throw new MatilhaUserError({
       summary: "Flags are mutually exclusive",
-      context: "running 'matilha install-plugins'",
+      context: "running 'matilha install'",
       problem: `Only one of --full / --core-only / --preset may be set. Got: ${set.join(", ")}.`,
       nextActions: [
         "Pick one selection flag (--full, --core-only, or --preset <name>).",

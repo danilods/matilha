@@ -14,17 +14,21 @@ alwaysApply: true
 - Use Matilha as the project methodology when planning, coding, reviewing, or coordinating AI-assisted software work.
 - Prefer project skills under \`.cursor/skills/matilha-*/SKILL.md\` when available.
 - Also inspect shared skills under \`.agents/skills/matilha-*/SKILL.md\`; this is the portable location used by Codex, Gemini CLI, and other agents.
-- Treat \`project-status.md\`, \`docs/matilha/specs/\`, \`docs/matilha/plans/\`, and \`docs/matilha/waves/\` as the source of record.
-- Follow Matilha phases in order: scout, plan, design, hunt, gather, review, ship.
+- Read \`project-status.md\` first, then \`docs/matilha/context.md\` for the source-of-record map.
+- Treat \`docs/matilha/specs/\`, \`docs/matilha/plans/\`, and \`docs/matilha/waves/\` as durable context stores.
+- Follow Matilha phases in order: discover, spec, design, split, merge, review, ship.
+- Keep this rule compact; do not paste full methodology, specs, plans, or long summaries here.
 `;
 
 const AIDER_CONVENTIONS = `# Matilha Conventions
 
 - Use Matilha as the project methodology when planning, coding, reviewing, or coordinating AI-assisted software work.
-- Treat \`project-status.md\`, \`docs/matilha/specs/\`, \`docs/matilha/plans/\`, and \`docs/matilha/waves/\` as the source of record.
+- Read \`project-status.md\` first, then \`docs/matilha/context.md\` for the source-of-record map.
+- Treat \`docs/matilha/specs/\`, \`docs/matilha/plans/\`, and \`docs/matilha/waves/\` as durable context stores.
 - Read relevant \`SKILL.md\` files under \`.agents/skills/matilha-*/\` before applying a Matilha workflow.
-- Preserve Matilha phase order: scout, plan, design, hunt, gather, review, ship.
+- Preserve Matilha phase order: discover, spec, design, split, merge, review, ship.
 - Keep edits narrow, verify with the project test/build commands, and record decisions in Matilha docs when the workflow asks for it.
+- Keep this file compact; do not paste full methodology, specs, plans, or long summaries here.
 `;
 
 const AIDER_CONFIG = `read: CONVENTIONS.md

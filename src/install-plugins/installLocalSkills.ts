@@ -35,7 +35,7 @@ alwaysApply: true
 - Inspect project skills under \`.cursor/skills/matilha-*/SKILL.md\` when available.
 - Also inspect shared skills under \`.agents/skills/matilha-*/SKILL.md\` when present.
 - Treat \`project-status.md\`, \`docs/matilha/specs/\`, \`docs/matilha/plans/\`, and \`docs/matilha/waves/\` as the source of record.
-- Follow Matilha phases in order: scout, plan, design, hunt, gather, review, ship.
+- Follow Matilha phases in order: discover, spec, design, split, merge, review, ship.
 `;
 
 export async function installLocalSkills(

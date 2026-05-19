@@ -24,6 +24,7 @@ describe("writeToolBootstraps", () => {
     const content = readFileSync(path, "utf-8");
     expect(content).toContain("alwaysApply: true");
     expect(content).toContain("Matilha");
+    expect(content).toContain("docs/matilha/context.md");
   });
 
   it("writes Aider conventions and config when Aider is detected", async () => {
@@ -32,6 +33,7 @@ describe("writeToolBootstraps", () => {
     const configPath = join(tmp, ".aider.conf.yml");
     expect(result.map((r) => r.path)).toEqual([conventionsPath, configPath]);
     expect(readFileSync(conventionsPath, "utf-8")).toContain("Matilha");
+    expect(readFileSync(conventionsPath, "utf-8")).toContain("docs/matilha/context.md");
     expect(readFileSync(configPath, "utf-8")).toContain("read: CONVENTIONS.md");
   });
 

@@ -58,7 +58,7 @@ export function translateFsError(
       nextActions: [
         `check the path is correct (the file may have been moved or deleted)`,
         ctx.resource === "plan"
-          ? "run 'matilha plan <slug>' to scaffold it"
+          ? "run 'matilha spec <slug>' to scaffold it"
           : "create the file manually or re-run a matilha command that scaffolds it"
       ]
     };

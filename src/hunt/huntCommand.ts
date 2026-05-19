@@ -59,7 +59,7 @@ function pickWave(waves: ParsedWave[], explicit?: number): ParsedWave {
     if (!w) {
       throw new MatilhaUserError({
         summary: `wave ${id} not found in plan`,
-        context: "matilha hunt was picking which wave to dispatch",
+        context: "matilha split was picking which wave to dispatch",
         problem: `plan frontmatter declares waves: ${waves.map((w) => w.id).join(", ")}`,
         nextActions: ["pass a valid --wave value", "or omit --wave to dispatch the first pending wave"]
       });
@@ -76,7 +76,7 @@ export async function huntCommand(
   opts: HuntOptions = {}
 ): Promise<void> {
   const s = createStream();
-  printMiniBanner(`matilha hunt — ${featureSlug}`, "Phase 40 wave dispatch");
+  printMiniBanner(`matilha split — ${featureSlug}`, "Phase 40 wave dispatch");
 
   // === Pre-flight (Swiss Cheese) ===
   s.section("pre-flight");
@@ -89,9 +89,9 @@ export async function huntCommand(
     s.step("project-status.md").fail();
     throw new MatilhaUserError({
       summary: "project-status.md missing",
-      context: "matilha hunt was checking project phase",
+      context: "matilha split was checking project phase",
       problem: "no project-status.md at the repo root.",
-      nextActions: ["run 'matilha init' to scaffold the project"]
+      nextActions: ["run 'matilha start' to scaffold the project"]
     });
   }
   const statusRaw = readFileSync(statusPath, "utf-8");
@@ -99,9 +99,9 @@ export async function huntCommand(
   if (!fmMatch) {
     throw new MatilhaUserError({
       summary: "project-status.md has no frontmatter",
-      context: "matilha hunt was reading project phase",
+      context: "matilha split was reading project phase",
       problem: "the file lacks a YAML frontmatter block.",
-      nextActions: ["restore project-status.md — re-run 'matilha init --force' if needed"]
+      nextActions: ["restore project-status.md — re-run 'matilha start --force' if needed"]
     });
   }
   // fmMatch narrowed non-null above; capture group 1 exists by regex shape — assert under strict flag.
@@ -110,12 +110,12 @@ export async function huntCommand(
   if (status.current_phase < 30) {
     s.step("current_phase >= 30").fail(String(status.current_phase));
     throw new MatilhaUserError({
-      summary: "project is not ready for /hunt (needs phase 30 done)",
-      context: "matilha hunt enforces phase gating per methodology/40-execucao",
-      problem: `project-status.md shows current_phase: ${status.current_phase}; /hunt needs ≥ 30.`,
+      summary: "project is not ready for split (needs phase 30 done)",
+      context: "matilha split enforces phase gating per methodology/40-execucao",
+      problem: `project-status.md shows current_phase: ${status.current_phase}; split needs >= 30.`,
       nextActions: [
-        "run 'matilha howl' to see your phase and next action",
-        "finish Phases 10/20/30 via 'matilha plan' + 'matilha attest' first"
+        "run 'matilha status' to see your phase and next action",
+        "finish Phases 10/20/30 via 'matilha spec' + 'matilha approve' first"
       ]
     });
   }
@@ -125,7 +125,7 @@ export async function huntCommand(
     s.step("working tree clean").fail();
     throw new MatilhaUserError({
       summary: "uncommitted changes on current branch",
-      context: "matilha hunt creates worktrees from HEAD",
+      context: "matilha split creates worktrees from HEAD",
       problem: "uncommitted changes wouldn't propagate to the new worktrees.",
       nextActions: [
         "commit your changes: git add -A && git commit -m '<message>'",
@@ -170,12 +170,12 @@ export async function huntCommand(
   if (existsSync(waveStatusPath) && !opts.force) {
     throw new MatilhaUserError({
       summary: `wave ${padWave(waveNum)} already dispatched`,
-      context: `matilha hunt found ${waveStatusPath.replace(cwd + "/", "")}`,
+      context: `matilha split found ${waveStatusPath.replace(cwd + "/", "")}`,
       problem: "re-running would stomp an active wave.",
       nextActions: [
         `inspect: cat ${waveStatusPath.replace(cwd + "/", "")}`,
-        `start another wave: matilha hunt ${featureSlug} --wave ${waveNum + 1}`,
-        `re-dispatch (destructive, only if no SP-DONE.md exists): matilha hunt ${featureSlug} --force`
+        `start another wave: matilha split ${featureSlug} --wave ${waveNum + 1}`,
+        `re-dispatch (destructive, only if no SP-DONE.md exists): matilha split ${featureSlug} --force`
       ]
     });
   }
@@ -296,6 +296,6 @@ export async function huntCommand(
   // === Bookend ===
   s.footer(
     `wave ${padWave(waveNum)} dispatched. ${wave.sps.length} worktree(s) ready.\n\n` +
-    `next:\n  paste each dispatch command in a new terminal\n  when every SP has SP-DONE.md, run 'matilha gather ${featureSlug} --wave ${waveNum}'`
+    `next:\n  paste each dispatch command in a new terminal\n  when every SP has SP-DONE.md, run 'matilha merge ${featureSlug} --wave ${waveNum}'`
   );
 }

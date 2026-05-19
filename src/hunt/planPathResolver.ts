@@ -14,12 +14,12 @@ export function resolvePlanPath(cwd: string, slug: string): string {
   }
   throw new MatilhaUserError({
     summary: `plan not found for feature "${slug}"`,
-    context: `matilha hunt was looking in docs/matilha/plans/ and docs/superpowers/plans/`,
+    context: `matilha split was looking in docs/matilha/plans/ and docs/superpowers/plans/`,
     problem: `no file named ${slug}-plan.md (or <date>-${slug}-plan.md) exists in either directory.`,
     nextActions: [
-      `run 'matilha plan ${slug}' to scaffold the plan first`,
+      `run 'matilha spec ${slug}' to scaffold the plan first`,
       `or check the slug spelling and the plan file name`
     ],
-    example: `matilha plan ${slug} --import-research <research.md>`
+    example: `matilha spec ${slug} --import-research <research.md>`
   });
 }

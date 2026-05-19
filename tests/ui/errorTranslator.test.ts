@@ -15,14 +15,14 @@ describe("translateZodError", () => {
     } catch (e) {
       if (!(e instanceof z.ZodError)) throw e;
       const me = translateZodError(e, {
-        context: "matilha hunt read docs/matilha/plans/feat-auth.md",
+        context: "matilha split read docs/matilha/plans/feat-auth.md",
         file: "docs/matilha/plans/feat-auth.md"
       });
       expect(me.summary.toLowerCase()).toMatch(/missing/);
       expect(me.summary).toContain("waves");
       expect(me.problem).toContain("waves");
       expect(me.nextActions.length).toBeGreaterThan(0);
-      expect(me.context).toContain("hunt");
+      expect(me.context).toContain("split");
     }
   });
 
@@ -50,13 +50,13 @@ describe("translateFsError", () => {
       path: "/missing.md"
     }) as NodeJS.ErrnoException;
     const me = translateFsError(e, {
-      context: "matilha hunt was reading the plan file",
+      context: "matilha split was reading the plan file",
       resource: "plan"
     });
     expect(me.summary.toLowerCase()).toMatch(/not found/);
     expect(me.problem).toContain("/missing.md");
     // resource === "plan" triggers the plan-specific next-step
-    expect(me.nextActions.some((a) => a.includes("matilha plan"))).toBe(true);
+    expect(me.nextActions.some((a) => a.includes("matilha spec"))).toBe(true);
   });
 
   it("converts EACCES to permission-denied with write-permission hint", () => {
@@ -65,7 +65,7 @@ describe("translateFsError", () => {
       path: "/protected/x.md"
     }) as NodeJS.ErrnoException;
     const me = translateFsError(e, {
-      context: "matilha plan was writing the spec",
+      context: "matilha spec was writing the spec",
       resource: "spec"
     });
     expect(me.summary.toLowerCase()).toMatch(/permission/);
@@ -77,7 +77,7 @@ describe("translateUnknownError", () => {
   it("wraps arbitrary Error with generic fallback preserving the message + --debug hint", () => {
     const e = new Error("something broke");
     const me = translateUnknownError(e, {
-      context: "unknown phase of matilha init"
+      context: "unknown phase of matilha start"
     });
     expect(me.summary.toLowerCase()).toMatch(/unexpected/);
     expect(me.problem).toContain("something broke");

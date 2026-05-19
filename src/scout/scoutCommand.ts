@@ -13,7 +13,7 @@ async function ask(index: number, total: number, message: string, placeholder?: 
     placeholder
   });
   if (isCancel(answer)) {
-    cancel("Scout cancelled. Run again when ready.");
+    cancel("Discovery cancelled. Run again when ready.");
     process.exitCode = 0;
     throw new Error("cancelled");
   }
@@ -25,10 +25,10 @@ export async function scoutCommand(cwd: string): Promise<void> {
   if (!existsSync(statusPath)) {
     throw new MatilhaUserError({
       summary: "not a Matilha project",
-      context: "matilha scout expected to find project-status.md at the project root",
+      context: "matilha discover expected to find project-status.md at the project root",
       problem: "no project-status.md found in the current directory.",
       nextActions: [
-        "run 'matilha init' to bootstrap this directory as a Matilha project",
+        "run 'matilha start' to bootstrap this directory as a Matilha project",
         "or 'cd' to the project root first if you're in a subdirectory"
       ]
     });
@@ -39,16 +39,16 @@ export async function scoutCommand(cwd: string): Promise<void> {
   if (fm.data.current_phase !== 0) {
     throw new MatilhaUserError({
       summary: "your project is past Phase 00",
-      context: "matilha scout only runs once, at the start of a project",
+      context: "matilha discover only runs once, at the start of a project",
       problem: `project-status.md shows current_phase: ${fm.data.current_phase}.`,
       nextActions: [
-        `run 'matilha howl' to see your current phase and next action`,
+        `run 'matilha status' to see your current phase and next action`,
         `if you truly want to redo discovery, manually reset current_phase to 0 in project-status.md`
       ]
     });
   }
 
-  printMiniBanner("matilha scout", "Phase 00 Discovery");
+  printMiniBanner("matilha discover", "Phase 00 Discovery");
 
   const s = createStream();
   s.section("pre-flight");
@@ -71,7 +71,7 @@ export async function scoutCommand(cwd: string): Promise<void> {
   const notesPath = join(notesDir, "discovery-notes.md");
   const notesContent = `# Phase 00 Discovery — ${fm.data.name}
 
-Captured by \`matilha scout\` on ${new Date().toISOString()}.
+Captured by \`matilha discover\` on ${new Date().toISOString()}.
 
 ## Target user
 
@@ -110,14 +110,14 @@ ${outOfScope}
   };
   fm.data.current_phase = 10;
   fm.data.phase_status = "not_started";
-  fm.data.next_action = "Run /plan <slug> to begin Phases 10-30 (PRD + Stack + Skills)";
+  fm.data.next_action = "Run matilha spec <slug> to begin Phases 10-30 (PRD + Stack + Skills)";
   fm.data.last_update = new Date().toISOString().replace(/\.\d+Z$/, "Z");
   await writeProjectStatus(cwd, fm);
   s.step("phase 00 → 10").ok();
   s.step("gates flipped").ok("4 phase_00 gates");
 
-  outro(pc.green("scout complete. you now know the user, their pain, and what success looks like."));
+  outro(pc.green("discovery complete. you now know the user, their pain, and what success looks like."));
   console.log("");
   console.log(pc.bold("next:"));
-  console.log(`  matilha plan <feature-slug>   begin Phase 10 PRD scaffold`);
+  console.log(`  matilha spec <feature-slug>   begin Phase 10 PRD scaffold`);
 }

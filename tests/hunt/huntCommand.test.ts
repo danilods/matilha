@@ -75,7 +75,7 @@ created: "2026-04-20T00:00:00Z"
 last_update: "2026-04-20T00:00:00Z"
 current_phase: 30
 phase_status: complete
-next_action: "Run /hunt"
+next_action: "Run matilha split"
 tools_detected: []
 companion_skills:
   impeccable: not_installed
@@ -151,7 +151,7 @@ describe("huntCommand — happy path", () => {
       expect(branches).toContain("wave-01-sp-database-schema");
       expect(branches).toContain("wave-01-sp-session-tokens");
       const output = captured.join("");
-      expect(output).toContain("matilha gather feat-auth --wave 1");
+      expect(output).toContain("matilha merge feat-auth --wave 1");
       expect(output).not.toContain("not yet shipped");
     } finally {
       stdoutSpy.mockRestore();

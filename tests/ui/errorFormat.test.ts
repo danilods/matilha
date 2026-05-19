@@ -5,7 +5,7 @@ const baseError: MatilhaError = {
   summary: "something went wrong",
   context: "matilha was reading companions.json",
   problem: "the file is missing",
-  nextActions: ["run `matilha init` to scaffold companions.json"],
+  nextActions: ["run `matilha start` to scaffold companions.json"],
 };
 
 describe("formatError", () => {
@@ -28,29 +28,29 @@ describe("formatError", () => {
     expect(out).toContain("matilha was reading companions.json");
     expect(out).toContain("the file is missing");
     expect(out).toContain("next:");
-    expect(out).toContain("run `matilha init` to scaffold companions.json");
+    expect(out).toContain("run `matilha start` to scaffold companions.json");
     expect(out).not.toContain("example:");
   });
 
   it("includes example block when provided", () => {
     const out = formatError({
       ...baseError,
-      example: "matilha init --force",
+      example: "matilha start --force",
     });
     expect(out).toContain("example:");
-    expect(out).toContain("matilha init --force");
+    expect(out).toContain("matilha start --force");
   });
 
   it("renders multiple next actions as separate lines", () => {
     const out = formatError({
       ...baseError,
       nextActions: [
-        "run `matilha init` to scaffold",
+        "run `matilha start` to scaffold",
         "check the current directory",
         "read `matilha --help`",
       ],
     });
-    expect(out).toContain("run `matilha init` to scaffold");
+    expect(out).toContain("run `matilha start` to scaffold");
     expect(out).toContain("check the current directory");
     expect(out).toContain("read `matilha --help`");
   });

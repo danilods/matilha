@@ -1,5 +1,5 @@
 // src/hunt/naming.ts
-// Shared SP/wave naming helpers used by /hunt and /gather.
+// Shared SP/wave naming helpers used by split and merge.
 
 export function slugifySP(title: string): string {
   return title.toLowerCase()

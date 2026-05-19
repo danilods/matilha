@@ -39,7 +39,7 @@ describe("resolvePlanPath", () => {
         resolvePlanPath(root, "missing");
       } catch (e) {
         if (!(e instanceof MatilhaUserError)) throw e;
-        expect(e.matilhaError.nextActions.some((a) => a.includes("matilha plan"))).toBe(true);
+        expect(e.matilhaError.nextActions.some((a) => a.includes("matilha spec"))).toBe(true);
       }
     } finally { rmSync(root, { recursive: true, force: true }); }
   });

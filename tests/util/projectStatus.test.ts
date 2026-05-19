@@ -12,7 +12,7 @@ created: "2026-04-19T10:00:00Z"
 last_update: "2026-04-19T10:00:00Z"
 current_phase: 0
 phase_status: not_started
-next_action: "Run /scout"
+next_action: "Run matilha discover"
 tools_detected:
   - claude-code
 companion_skills:
@@ -62,10 +62,10 @@ describe("writeProjectStatus", () => {
     writeFileSync(join(tmp, "project-status.md"), VALID);
     const original = await readProjectStatus(tmp);
     original.data.current_phase = 10;
-    original.data.next_action = "Run /plan";
+    original.data.next_action = "Run matilha spec";
     await writeProjectStatus(tmp, original);
     const reread = await readProjectStatus(tmp);
     expect(reread.data.current_phase).toBe(10);
-    expect(reread.data.next_action).toBe("Run /plan");
+    expect(reread.data.next_action).toBe("Run matilha spec");
   });
 });

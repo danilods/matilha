@@ -62,7 +62,7 @@ export function parsePlan(markdown: string): ParsedPlan {
   if (!fmMatch) {
     throw new MatilhaUserError({
       summary: "plan file has no frontmatter",
-      context: "matilha hunt was reading the plan file",
+      context: "matilha split was reading the plan file",
       problem: "the file does not start with a `---` frontmatter block.",
       nextActions: [
         "open the plan and add a frontmatter block (name, spec, created, waves)",
@@ -100,7 +100,7 @@ export function parsePlan(markdown: string): ParsedPlan {
     } else if (trimmed.startsWith("### SP")) {
       throw new MatilhaUserError({
         summary: `malformed SP heading at line ${i + 1}`,
-        context: "matilha hunt was parsing the plan body",
+        context: "matilha split was parsing the plan body",
         problem: `line "${trimmed}" does not match any accepted SP heading format.`,
         nextActions: [
           `rename the heading to use the canonical form`,
@@ -119,7 +119,7 @@ export function parsePlan(markdown: string): ParsedPlan {
       if (!bodyEntry) {
         throw new MatilhaUserError({
           summary: `SP ${spId} in frontmatter but missing in body`,
-          context: "matilha hunt was matching frontmatter SPs to body headings",
+          context: "matilha split was matching frontmatter SPs to body headings",
           problem: `frontmatter declares ${spId} under ${waveKey} but no "### ${spId} —" heading was found.`,
           nextActions: [
             `add a body section "### ${spId} — <title>" with Acceptance/Touches/Tests blocks`,
@@ -145,7 +145,7 @@ export function parsePlan(markdown: string): ParsedPlan {
       if (touches.length === 0) {
         throw new MatilhaUserError({
           summary: `SP ${spId} has no Touches block or it's empty`,
-          context: `matilha hunt was extracting file list for ${spId}`,
+          context: `matilha split was extracting file list for ${spId}`,
           problem: `the Touches block is required and must list at least one file.`,
           nextActions: [
             `add "**Touches**" followed by a bullet list of files ${spId} will modify`,
@@ -158,7 +158,7 @@ export function parsePlan(markdown: string): ParsedPlan {
       if (acceptance.length === 0) {
         throw new MatilhaUserError({
           summary: `SP ${spId} has no Acceptance block or it's empty`,
-          context: `matilha hunt was extracting acceptance criteria for ${spId}`,
+          context: `matilha split was extracting acceptance criteria for ${spId}`,
           problem: `the Acceptance block is required with at least one checkbox.`,
           nextActions: [`add "**Acceptance**" followed by checkbox bullets`]
         });
@@ -181,7 +181,7 @@ export function parsePlan(markdown: string): ParsedPlan {
     if (!frontmatterIds.has(bodyId)) {
       throw new MatilhaUserError({
         summary: `SP ${bodyId} found in body but not declared in frontmatter`,
-        context: "matilha hunt was reconciling body headings with frontmatter",
+        context: "matilha split was reconciling body headings with frontmatter",
         problem: `the body has "### ${bodyId} — ..." but frontmatter waves does not list ${bodyId}.`,
         nextActions: [
           `add ${bodyId} to the appropriate wave in frontmatter`,

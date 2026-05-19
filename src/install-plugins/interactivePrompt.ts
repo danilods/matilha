@@ -19,7 +19,7 @@ export type InstallChoice = {
 type PresetChoice = PresetName | "core-only" | "custom";
 
 /**
- * Interactive @clack/prompts flow for `matilha install-plugins` with no flags.
+ * Interactive @clack/prompts flow for `matilha install` with no flags.
  *
  * Flow:
  *   1. Preset picker (backend / ux / fullstack / security / core-only / custom).
@@ -31,7 +31,7 @@ export type InteractivePromptOptions = {
 };
 
 export async function runInteractivePrompt(opts: InteractivePromptOptions = {}): Promise<InstallChoice> {
-  intro("matilha install-plugins");
+  intro("matilha install");
 
   const presetChoice = await select<PresetChoice>({
     message: "Which matilha packs do you want to install?",

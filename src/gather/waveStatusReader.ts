@@ -21,13 +21,13 @@ export function readWaveStatus(cwd: string, waveNum: number): WaveStatusReadResu
   if (!existsSync(absPath)) {
     throw new MatilhaUserError({
       summary: `wave-${padWaveNum(waveNum)}-status.md not found`,
-      context: `matilha gather was looking for the wave status file at ${relPath}`,
-      problem: `no wave-status file exists for wave ${waveNum}; /gather needs one to know which SPs to merge.`,
+      context: `matilha merge was looking for the wave status file at ${relPath}`,
+      problem: `no wave-status file exists for wave ${waveNum}; merge needs one to know which SPs to merge.`,
       nextActions: [
-        `run 'matilha hunt <slug> --wave ${waveNum}' to dispatch the wave first`,
+        `run 'matilha split <slug> --wave ${waveNum}' to dispatch the wave first`,
         `or pass --wave N to pick a wave that has been dispatched`
       ],
-      example: `matilha hunt <slug> --wave ${waveNum}`
+      example: `matilha split <slug> --wave ${waveNum}`
     });
   }
 
@@ -36,11 +36,11 @@ export function readWaveStatus(cwd: string, waveNum: number): WaveStatusReadResu
   if (!fmMatch) {
     throw new MatilhaUserError({
       summary: `wave-${padWaveNum(waveNum)}-status.md has no frontmatter`,
-      context: `matilha gather was parsing wave-status`,
+      context: `matilha merge was parsing wave-status`,
       problem: `the file ${relPath} lacks a YAML frontmatter block between '---' fences.`,
       nextActions: [
         `inspect the file and restore the frontmatter`,
-        `or re-run 'matilha hunt <slug> --wave ${waveNum} --force' to regenerate it`
+        `or re-run 'matilha split <slug> --wave ${waveNum} --force' to regenerate it`
       ]
     });
   }
@@ -50,11 +50,11 @@ export function readWaveStatus(cwd: string, waveNum: number): WaveStatusReadResu
   if (!result.success) {
     throw new MatilhaUserError({
       summary: `wave-${padWaveNum(waveNum)}-status.md has invalid frontmatter`,
-      context: `matilha gather was validating wave-status against waveSchema`,
+      context: `matilha merge was validating wave-status against waveSchema`,
       problem: `schema violation: ${result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")}`,
       nextActions: [
         `fix the file manually`,
-        `or re-run 'matilha hunt <slug> --wave ${waveNum} --force' to regenerate`
+        `or re-run 'matilha split <slug> --wave ${waveNum} --force' to regenerate`
       ]
     });
   }

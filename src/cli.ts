@@ -14,6 +14,15 @@ import { pullCommand } from "./pull/pullCommand";
 import { huntCommand } from "./hunt/huntCommand";
 import { gatherCommand } from "./gather/gatherCommand";
 import { installPluginsCommand } from "./install-plugins/installPluginsCommand";
+import {
+  jiraApplyCommand,
+  jiraCreateCommand,
+  jiraInitCommand,
+  jiraPreviewCommand,
+  jiraSyncCommand,
+  jiraValidateCommand
+} from "./jira/jiraCommand";
+import { renderGuide, shouldRenderGuide } from "./workflow/guide";
 
 const program = new Command();
 
@@ -21,7 +30,18 @@ program
   .name("matilha")
   .description("Agentic methodology plugin + CLI. Humans lead, agents hunt.")
   .version(VERSION, "-v, --version", "Print version and exit")
+  .option("--no-guide", "hide workflow next-step recommendations")
+  .option("--guide", "show workflow next-step recommendations")
   .addHelpText("beforeAll", MATILHA_BANNER);
+
+function guideEnabled(): boolean {
+  const opts = program.opts<{ guide?: boolean }>();
+  return shouldRenderGuide({ guide: opts.guide });
+}
+
+function renderWorkflowGuide(): void {
+  renderGuide(process.cwd(), { guide: guideEnabled() });
+}
 
 program
   .command("list")
@@ -31,6 +51,7 @@ program
     try {
       const client = new RegistryClient();
       await listCommand({ client, json: opts.json });
+      if (!opts.json) renderWorkflowGuide();
     } catch (err) {
       handleCommandError(err, "running 'matilha list'");
     }
@@ -43,49 +64,57 @@ program
     try {
       const client = new RegistryClient();
       await pullCommand({ client, slug });
+      renderWorkflowGuide();
     } catch (err) {
       handleCommandError(err, "running 'matilha pull'");
     }
   });
 
 program
-  .command("init")
-  .description("Bootstrap a Matilha project")
+  .command("start")
+  .alias("init")
+  .description("Start or refresh Matilha control files for this project")
   .option("--dry-run", "preview writes without touching disk", false)
   .action(async (opts: { dryRun: boolean }) => {
     try {
       await initProject(process.cwd(), { dryRun: opts.dryRun });
+      renderWorkflowGuide();
     } catch (err) {
-      handleCommandError(err, "running 'matilha init'");
+      handleCommandError(err, "running 'matilha start'");
     }
   });
 
 program
-  .command("howl")
+  .command("status")
+  .alias("howl")
   .description("Show Matilha project state and next action")
   .option("--json", "output as JSON for scripting", false)
   .action(async (opts: { json: boolean }) => {
     try {
       await howlCommand(process.cwd(), { json: opts.json });
+      if (!opts.json) renderWorkflowGuide();
     } catch (err) {
-      handleCommandError(err, "running 'matilha howl'");
+      handleCommandError(err, "running 'matilha status'");
     }
   });
 
 program
-  .command("scout")
-  .description("Run Phase 00 discovery — map the problem before any code")
+  .command("discover")
+  .alias("scout")
+  .description("Discover the problem space before planning or coding")
   .action(async () => {
     try {
       await scoutCommand(process.cwd());
+      renderWorkflowGuide();
     } catch (err) {
-      handleCommandError(err, "running 'matilha scout'");
+      handleCommandError(err, "running 'matilha discover'");
     }
   });
 
 program
-  .command("plan <slug>")
-  .description("Scaffold spec+plan for a feature (Phases 10-30)")
+  .command("spec <slug>")
+  .alias("plan")
+  .description("Create or continue a feature spec and implementation plan")
   .option("--import-research <file>", "import a deep-research markdown as Section 1 context")
   .option("--archetype <archetype>", "override archetype from project-status")
   .option("--dry-run", "preview writes without touching disk", false)
@@ -98,14 +127,16 @@ program
         dryRun: opts.dryRun,
         force: opts.force
       });
+      renderWorkflowGuide();
     } catch (err) {
-      handleCommandError(err, "running 'matilha plan'");
+      handleCommandError(err, "running 'matilha spec'");
     }
   });
 
 program
-  .command("attest [gateKey]")
-  .description("Attest a phase gate (interactive if gateKey omitted)")
+  .command("approve [gateKey]")
+  .alias("attest")
+  .description("Approve a phase gate after validation")
   .option("--feature <slug>", "feature name if multiple artifacts")
   .option("--force", "override validation failure", false)
   .action(async (gateKey: string | undefined, opts: { feature?: string; force: boolean }) => {
@@ -115,28 +146,32 @@ program
         feature: opts.feature,
         force: opts.force
       });
+      renderWorkflowGuide();
     } catch (err) {
-      handleCommandError(err, "running 'matilha attest'");
+      handleCommandError(err, "running 'matilha approve'");
     }
   });
 
 program
-  .command("plan-status")
-  .description("Show feature artifacts + phase gates state")
+  .command("progress")
+  .alias("plan-status")
+  .description("Show feature artifacts, phase gates, and progress")
   .option("--feature <slug>", "scope to one feature")
   .option("--json", "machine-readable output", false)
   .option("--all", "show all gates (no truncation)", false)
   .action(async (opts: { feature?: string; json: boolean; all: boolean }) => {
     try {
       await statusCommand(process.cwd(), { feature: opts.feature, json: opts.json, all: opts.all });
+      if (!opts.json) renderWorkflowGuide();
     } catch (err) {
-      handleCommandError(err, "running 'matilha plan-status'");
+      handleCommandError(err, "running 'matilha progress'");
     }
   });
 
 program
-  .command("hunt <featureSlug>")
-  .description("Phase 40 — decompose plan into waves, create worktrees, dispatch parallel")
+  .command("split <featureSlug>")
+  .alias("hunt")
+  .description("Split a plan into parallel worktree tasks")
   .option("--wave <n>", "explicit wave number", (v) => parseInt(v, 10))
   .option("--dry-run", "preview without touching git", false)
   .option("--force", "re-dispatch wave (destructive)", false)
@@ -149,32 +184,126 @@ program
         force: opts.force,
         allowOverlap: opts.allowOverlap
       });
+      renderWorkflowGuide();
     } catch (err) {
-      handleCommandError(err, "running 'matilha hunt'");
+      handleCommandError(err, "running 'matilha split'");
     }
   });
 
 program
-  .command("gather <featureSlug>")
-  .description("Phase 40 — merge completed SPs in wave order, run regression, update wave-status")
+  .command("merge <featureSlug>")
+  .alias("gather")
+  .description("Merge completed worktree tasks, run regression, and update wave status")
   .option("--wave <n>", "explicit wave number", (v) => parseInt(v, 10))
   .option("--dry-run", "validate SP-DONEs + print merge plan, no mutation", false)
-  .option("--cleanup", "remove worktrees + delete merged branches after success", false)
-  .action(async (featureSlug: string, opts: { wave?: number; dryRun: boolean; cleanup: boolean }) => {
+  .option("--cleanup", "remove worktrees + delete merged branches after success (default)", true)
+  .option("--keep-worktrees", "keep SP worktrees and merged branches after success", false)
+  .option("--no-events", "skip local task.completed event emission", false)
+  .action(async (featureSlug: string, opts: { wave?: number; dryRun: boolean; cleanup: boolean; keepWorktrees: boolean; events: boolean }) => {
     try {
       await gatherCommand(process.cwd(), featureSlug, {
         wave: opts.wave,
         dryRun: opts.dryRun,
-        cleanup: opts.cleanup
+        cleanup: opts.keepWorktrees ? false : opts.cleanup,
+        events: opts.events
       });
+      renderWorkflowGuide();
     } catch (err) {
-      handleCommandError(err, "running 'matilha gather'");
+      handleCommandError(err, "running 'matilha merge'");
+    }
+  });
+
+const jira = program
+  .command("jira")
+  .description("Optional Jira sprint integration");
+
+jira
+  .command("init")
+  .description("Install the local Jira skill and example JSON contract")
+  .option("--dry-run", "preview files without writing", false)
+  .action(async (opts: { dryRun: boolean }) => {
+    try {
+      await jiraInitCommand(process.cwd(), { dryRun: opts.dryRun });
+      renderWorkflowGuide();
+    } catch (err) {
+      handleCommandError(err, "running 'matilha jira init'");
+    }
+  });
+
+jira
+  .command("validate <file>")
+  .description("Validate a Matilha Jira JSON task contract")
+  .action(async (file: string) => {
+    try {
+      await jiraValidateCommand(file);
+      renderWorkflowGuide();
+    } catch (err) {
+      handleCommandError(err, "running 'matilha jira validate'");
+    }
+  });
+
+jira
+  .command("preview <file>")
+  .description("Preview Jira mutations from a JSON task contract")
+  .action(async (file: string) => {
+    try {
+      await jiraPreviewCommand(file);
+      renderWorkflowGuide();
+    } catch (err) {
+      handleCommandError(err, "running 'matilha jira preview'");
+    }
+  });
+
+jira
+  .command("apply <file>")
+  .description("Apply a validated Jira JSON task contract after explicit approval")
+  .option("--yes", "approve Jira mutations", false)
+  .option("--dry-run", "preview without calling Jira", false)
+  .action(async (file: string, opts: { yes: boolean; dryRun: boolean }) => {
+    try {
+      await jiraApplyCommand(file, { yes: opts.yes, dryRun: opts.dryRun });
+      renderWorkflowGuide();
+    } catch (err) {
+      handleCommandError(err, "running 'matilha jira apply'");
+    }
+  });
+
+jira
+  .command("sync")
+  .description("Sync pending Matilha completion events to Jira after explicit approval")
+  .option("--preview", "preview pending Jira updates without calling Jira", false)
+  .option("--yes", "approve Jira sync mutations", false)
+  .action(async (opts: { preview: boolean; yes: boolean }) => {
+    try {
+      await jiraSyncCommand(process.cwd(), { preview: opts.preview, yes: opts.yes });
+      renderWorkflowGuide();
+    } catch (err) {
+      handleCommandError(err, "running 'matilha jira sync'");
+    }
+  });
+
+jira
+  .command("create")
+  .description("Create a Jira issue from a Matilha task payload")
+  .requiredOption("--summary <text>", "Jira issue summary")
+  .option("--description <markdown>", "Jira issue description in lightweight markdown")
+  .option("--type <name>", "Jira issue type", "Task")
+  .option("--points <number>", "Story points value")
+  .option("--project <key>", "Jira project key (overrides JIRA_PROJECT_KEY)")
+  .option("--dry-run", "print the Jira payload without calling the API", false)
+  .action(async (opts: { summary: string; description?: string; type?: string; points?: string; project?: string; dryRun: boolean }) => {
+    try {
+      await jiraCreateCommand(opts);
+      renderWorkflowGuide();
+    } catch (err) {
+      handleCommandError(err, "running 'matilha jira create'");
     }
   });
 
 program
-  .command("install-plugins")
-  .description("Install the matilha ecosystem (interactive by default; paste-block or --deep direct install)")
+  .command("install")
+  .alias("install-plugins")
+  .description("Install Matilha skills and optional companion packs")
   .option("--full", "non-interactive: core + all 7 companion packs", false)
   .option("--core-only", "non-interactive: just matilha-skills core", false)
   .option("--preset <name>", "non-interactive: backend | ux | fullstack | security")
@@ -195,8 +324,9 @@ program
         scope: opts.scope as "user" | "project" | undefined,
         clipboard: opts.clipboard
       });
+      renderWorkflowGuide();
     } catch (err) {
-      handleCommandError(err, "running 'matilha install-plugins'");
+      handleCommandError(err, "running 'matilha install'");
     }
   });
 
