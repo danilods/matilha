@@ -5,6 +5,7 @@ import {
   resolveActor,
   looksLikeIssueKey
 } from "../../src/governance/events";
+import { MatilhaUserError } from "../../src/ui/errorFormat";
 
 const actor = { tool: "claude-code", model: "claude-opus-4-7" };
 
@@ -48,7 +49,7 @@ describe("governance events", () => {
         timestamp: "2026-05-19T00:00:00Z",
         actor: { tool: "cli" }
       })
-    ).toThrow();
+    ).toThrow(MatilhaUserError);
   });
 
   it("resolves actor from env with a cli default", () => {
