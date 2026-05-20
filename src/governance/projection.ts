@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 import { z } from "zod";
 import type { GovernanceEvent } from "./events";
 import { MatilhaUserError } from "../ui/errorFormat";
+import { minutesToStoryPoints, resolveMinutesPerStoryPoint } from "./storyPoints";
 
 export const GOVERNANCE_STATE_VERSION = 1;
 
@@ -36,8 +37,10 @@ export type IssueState = z.infer<typeof issueStateSchema>;
 
 export function buildProjection(
   events: GovernanceEvent[],
-  rebuiltAt: string = new Date().toISOString()
+  rebuiltAt: string = new Date().toISOString(),
+  opts: { minutesPerStoryPoint?: number } = {}
 ): GovernanceState {
+  const minutesPerStoryPoint = opts.minutesPerStoryPoint ?? resolveMinutesPerStoryPoint();
   const byIssue = new Map<string, GovernanceEvent[]>();
   for (const event of events) {
     const list = byIssue.get(event.external_id) ?? [];
@@ -48,14 +51,13 @@ export function buildProjection(
   const issues: Record<string, IssueState> = {};
   for (const [externalId, list] of byIssue) {
     const sorted = [...list].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
-    issues[externalId] = projectIssue(sorted);
+    issues[externalId] = projectIssue(sorted, minutesPerStoryPoint);
   }
   return { schema_version: GOVERNANCE_STATE_VERSION, rebuilt_at: rebuiltAt, issues };
 }
 
-function projectIssue(sorted: GovernanceEvent[]): IssueState {
+function projectIssue(sorted: GovernanceEvent[], minutesPerStoryPoint: number): IssueState {
   let status: IssueState["status"] = "created";
-  let storyPoints: number | null = null;
   let category: string | null = null;
   let issueKind: string | null = null;
   let jiraKey: string | null = null;
@@ -70,7 +72,6 @@ function projectIssue(sorted: GovernanceEvent[]): IssueState {
     agent = { tool: event.actor.tool, ...(event.actor.model ? { model: event.actor.model } : {}) };
 
     if (event.type === "task.created") {
-      if (event.payload.story_points !== undefined) storyPoints = event.payload.story_points;
       if (event.payload.category !== undefined) category = event.payload.category;
       if (event.payload.issue_kind !== undefined) issueKind = event.payload.issue_kind;
     } else if (event.type === "task.started" || event.type === "task.resumed") {
@@ -100,12 +101,19 @@ function projectIssue(sorted: GovernanceEvent[]): IssueState {
   // Counting the open span up to "now" would change the worklog on every rebuild,
   // breaking the determinism the design requires.
   const minutes = Math.max(0, intervals.reduce((sum, i) => sum + diffMinutes(i.start, i.end), 0));
+  const worklogActiveMinutes = round1(minutes);
+  // Story point é medido, não estimado: nasce só na conclusão, derivado do
+  // worklog. Antes da conclusão é null (spec §7.2 D7).
+  const storyPoints =
+    status === "completed"
+      ? minutesToStoryPoints(worklogActiveMinutes, minutesPerStoryPoint)
+      : null;
   const last = sorted[sorted.length - 1]!;
   return {
     jira_key: jiraKey,
     status,
     story_points: storyPoints,
-    worklog_active_minutes: round1(minutes),
+    worklog_active_minutes: worklogActiveMinutes,
     worklog_estimated: status === "completed" && !sawStart,
     intervals,
     commits: [...commitSet],

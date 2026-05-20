@@ -63,4 +63,22 @@ describe("governance events", () => {
     expect(looksLikeIssueKey("BOIAA-1042")).toBe(true);
     expect(looksLikeIssueKey("feat-auth-SP1")).toBe(false);
   });
+
+  it("drops story_points from a task.created payload (SP is measured at completion)", () => {
+    const event = parseGovernanceEvent({
+      schema_version: 1,
+      event_id: "e-sp",
+      type: "task.created",
+      external_id: "BOIAA-1",
+      issue_key: "BOIAA-1",
+      timestamp: "2026-05-19T10:00:00Z",
+      actor: { tool: "cli" },
+      payload: { story_points: 3, category: "crawler" }
+    });
+    expect(event.type).toBe("task.created");
+    if (event.type === "task.created") {
+      expect(event.payload).not.toHaveProperty("story_points");
+      expect(event.payload.category).toBe("crawler");
+    }
+  });
 });

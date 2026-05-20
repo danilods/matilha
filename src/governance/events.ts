@@ -30,7 +30,6 @@ const taskCreatedSchema = z.object({
   payload: z
     .object({
       summary: z.string().min(1).optional(),
-      story_points: z.number().nonnegative().optional(),
       category: z.string().min(1).optional(),
       issue_kind: z.string().min(1).optional()
     })

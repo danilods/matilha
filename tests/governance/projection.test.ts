@@ -54,18 +54,56 @@ describe("governance projection", () => {
     expect(issue.status).toBe("completed");
   });
 
-  it("captures story points, category and issue_kind from task.created", () => {
+  it("captures category and issue_kind from task.created; story_points stays null before completion", () => {
     const issue = buildProjection([
       ev("task.created", "BOIAA-4", "2026-05-19T13:00:00Z", {
-        story_points: 3,
         category: "crawler",
         issue_kind: "component"
       })
     ]).issues["BOIAA-4"]!;
-    expect(issue.story_points).toBe(3);
     expect(issue.category).toBe("crawler");
     expect(issue.issue_kind).toBe("component");
     expect(issue.status).toBe("created");
+    expect(issue.story_points).toBeNull();
+  });
+
+  it("computes story_points from the active worklog when the task completes", () => {
+    const issue = buildProjection([
+      ev("task.started", "BOIAA-10", "2026-05-19T14:00:00Z"),
+      ev("task.completed", "BOIAA-10", "2026-05-19T14:22:00Z", { commits: ["c1"] })
+    ]).issues["BOIAA-10"]!;
+    expect(issue.worklog_active_minutes).toBe(22);
+    expect(issue.story_points).toBe(0.3); // minutesToStoryPoints(22, 60)
+  });
+
+  it("leaves story_points null while a task is still in progress", () => {
+    const issue = buildProjection([
+      ev("task.started", "BOIAA-11", "2026-05-19T14:00:00Z")
+    ]).issues["BOIAA-11"]!;
+    expect(issue.status).toBe("in_progress");
+    expect(issue.story_points).toBeNull();
+  });
+
+  it("floors story_points at 0.05 for an estimated-worklog completion", () => {
+    const issue = buildProjection([
+      ev("task.completed", "BOIAA-12", "2026-05-19T14:45:00Z", { commits: ["d"] })
+    ]).issues["BOIAA-12"]!;
+    expect(issue.worklog_active_minutes).toBe(0);
+    expect(issue.worklog_estimated).toBe(true);
+    expect(issue.story_points).toBe(0.05);
+  });
+
+  it("honors a custom minutesPerStoryPoint passed to buildProjection", () => {
+    const issue = buildProjection(
+      [
+        ev("task.started", "BOIAA-13", "2026-05-19T14:00:00Z"),
+        ev("task.completed", "BOIAA-13", "2026-05-19T14:30:00Z", { commits: ["c"] })
+      ],
+      undefined,
+      { minutesPerStoryPoint: 30 }
+    ).issues["BOIAA-13"]!;
+    expect(issue.worklog_active_minutes).toBe(30);
+    expect(issue.story_points).toBe(1); // 30 min ÷ 30 = 1 SP
   });
 
   it("sorts out-of-order events by timestamp before projecting", () => {
