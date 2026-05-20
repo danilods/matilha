@@ -1,6 +1,7 @@
 import pc from "picocolors";
 import { buildProjection } from "./projection";
-import { computeMetrics, resolveTraditionalHoursPerPoint } from "./metrics";
+import { computeMetrics } from "./metrics";
+import { resolveMinutesPerStoryPoint } from "./storyPoints";
 import { readMergedLedger, resolveLedgerRoots } from "./ledgerSources";
 
 export type MetricsCommandOptions = {
@@ -9,33 +10,35 @@ export type MetricsCommandOptions = {
 };
 
 export function metricsCommand(cwd: string, opts: MetricsCommandOptions = {}): void {
-  const state = buildProjection(readMergedLedger(resolveLedgerRoots(cwd, { ledger: opts.ledger })));
-  const metrics = computeMetrics(state, {
-    baselineHoursPerPoint: resolveTraditionalHoursPerPoint()
-  });
+  const minutesPerStoryPoint = resolveMinutesPerStoryPoint();
+  const state = buildProjection(
+    readMergedLedger(resolveLedgerRoots(cwd, { ledger: opts.ledger })),
+    undefined,
+    { minutesPerStoryPoint }
+  );
+  const metrics = computeMetrics(state, { minutesPerStoryPoint });
 
   if (opts.json) {
     console.log(JSON.stringify(metrics, null, 2));
     return;
   }
 
-  console.log(pc.bold("matilha governance metrics"));
-  console.log(`  issues completed:     ${metrics.issues_completed}`);
-  console.log(`  story points done:    ${metrics.story_points_completed}`);
-  console.log(`  active worklog (min): ${metrics.worklog_active_minutes}`);
-  console.log(`  minutes per point:    ${fmt(metrics.minutos_por_ponto)}`);
-  console.log(`  velocity (SP/day):    ${fmt(metrics.velocidade_sp_por_dia)}`);
+  console.log(pc.bold("matilha governance metrics — números finais"));
+  console.log(`  tasks concluídas:     ${metrics.tasks_concluidas}`);
+  console.log(`  tempo ativo total:    ${metrics.tempo_ativo_total} min`);
   console.log(
-    `  compression factor:   ${fmt(metrics.fator_compressao)}${metrics.fator_compressao !== null ? "x" : ""}  (baseline ${metrics.baseline_hours_per_point}h/point)`
+    `  story points total:   ${metrics.story_points_total}  (1 SP = ${metrics.minutes_per_story_point} min)`
   );
-  console.log(`  avg lead time (min):  ${fmt(metrics.lead_time_medio_minutos)}`);
+  console.log(`  duração (dias):       ${metrics.duracao_calendario_dias ?? "—"}`);
   if (metrics.worklog_estimated_count > 0) {
     console.log(
       pc.dim(`  note: ${metrics.worklog_estimated_count} completion(s) had estimated (not measured) worklog`)
     );
   }
-}
-
-function fmt(value: number | null): string {
-  return value === null ? "—" : String(value);
+  for (const task of metrics.detalhe_por_task) {
+    const flag = task.worklog_estimated ? pc.dim(" (estimated)") : "";
+    console.log(
+      `   - ${task.jira_key ?? task.external_id}: ${task.worklog_active_minutes} min → ${task.story_points} SP${flag}`
+    );
+  }
 }

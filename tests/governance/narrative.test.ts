@@ -11,35 +11,34 @@ function ev(type: GovernanceEventType, externalId: string, timestamp: string, pa
 }
 
 describe("renderNarrative", () => {
-  it("renders an executive markdown with the headline numbers", () => {
+  it("renders an executive markdown with the final numbers", () => {
     const state = buildProjection([
-      ev("task.created", "BOIAA-1", "2026-05-19T10:00:00Z", { story_points: 4 }),
       ev("task.started", "BOIAA-1", "2026-05-19T10:00:00Z"),
       ev("task.completed", "BOIAA-1", "2026-05-19T10:40:00Z", { commits: ["c1"] })
     ]);
-    const metrics = computeMetrics(state, { baselineHoursPerPoint: 8, generatedAt: "2026-05-20T00:00:00Z" });
+    const metrics = computeMetrics(state, { minutesPerStoryPoint: 60, generatedAt: "2026-05-20T00:00:00Z" });
     const md = renderNarrative(state, metrics);
 
     expect(md).toContain("# Governança Matilha — Narrativa Executiva");
     expect(md).toContain("2026-05-20T00:00:00Z");
-    expect(md).toContain("10 min por story point");
-    expect(md).toContain("48×");
+    expect(md).toContain("Os números finais");
+    expect(md).toContain("40 min");
+    expect(md).toContain("0.6 story points");
     expect(md).toContain("worklog medido");
   });
 
   it("honestly flags estimated worklog when present", () => {
     const state = buildProjection([
-      ev("task.created", "BOIAA-2", "2026-05-19T10:00:00Z", { story_points: 2 }),
       ev("task.completed", "BOIAA-2", "2026-05-19T11:00:00Z", { commits: ["d"] })
     ]);
-    const metrics = computeMetrics(state, { baselineHoursPerPoint: 8, generatedAt: "2026-05-20T00:00:00Z" });
+    const metrics = computeMetrics(state, { minutesPerStoryPoint: 60, generatedAt: "2026-05-20T00:00:00Z" });
     const md = renderNarrative(state, metrics);
     expect(md).toContain("worklog **estimado**");
   });
 
-  it("shows empty-ledger message when there are no completions", () => {
+  it("shows the empty-ledger message when there are no completions", () => {
     const state = buildProjection([]);
-    const metrics = computeMetrics(state, { baselineHoursPerPoint: 8, generatedAt: "2026-05-20T00:00:00Z" });
+    const metrics = computeMetrics(state, { minutesPerStoryPoint: 60, generatedAt: "2026-05-20T00:00:00Z" });
     const md = renderNarrative(state, metrics);
     expect(md).toContain("Nenhuma task concluída registrada ainda");
     expect(md).not.toContain("worklog medido");

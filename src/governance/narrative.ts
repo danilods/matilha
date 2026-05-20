@@ -8,35 +8,36 @@ export function renderNarrative(state: GovernanceState, metrics: GovernanceMetri
   lines.push("");
   lines.push(`_Gerado em ${metrics.generated_at}._`);
   lines.push("");
-  lines.push("## A mudança de paradigma, em números");
+  lines.push("## Os números finais");
   lines.push("");
+
+  if (metrics.tasks_concluidas === 0) {
+    lines.push("- Nenhuma task concluída registrada ainda.");
+    lines.push("");
+    return lines.join("\n");
+  }
+
+  lines.push(`- **${metrics.tasks_concluidas}** tasks concluídas.`);
+  lines.push(`- Tempo ativo de agente: **${metrics.tempo_ativo_total} min**.`);
   lines.push(
-    `- **${metrics.issues_completed}** tasks concluídas, somando **${metrics.story_points_completed}** story points.`
+    `- **${metrics.story_points_total} story points** entregues (1 SP = ${metrics.minutes_per_story_point} min de trabalho).`
   );
-  lines.push(`- Tempo ativo de agente: **${metrics.worklog_active_minutes} min**.`);
-  if (metrics.minutos_por_ponto !== null) {
-    lines.push(`- **${metrics.minutos_por_ponto} min por story point.**`);
-  }
-  if (metrics.fator_compressao !== null) {
-    lines.push(
-      `- No paradigma tradicional (~${metrics.baseline_hours_per_point}h/ponto, ~${metrics.baseline_hours_per_point * 60} min/ponto), isso é uma **compressão de ${metrics.fator_compressao}×**.`
-    );
-  }
-  if (metrics.velocidade_sp_por_dia !== null) {
-    lines.push(`- Velocidade realizada: **${metrics.velocidade_sp_por_dia} SP/dia**.`);
+  if (metrics.duracao_calendario_dias !== null) {
+    lines.push(`- Entregue em **${metrics.duracao_calendario_dias} dia(s)** de calendário.`);
   }
   lines.push("");
   lines.push("## Leitura honesta");
   lines.push("");
-  if (metrics.issues_completed === 0) {
-    lines.push("- Nenhuma task concluída registrada ainda.");
-  } else if (metrics.worklog_estimated_count > 0) {
+  if (metrics.worklog_estimated_count > 0) {
     lines.push(
-      `- ${metrics.worklog_estimated_count} de ${metrics.issues_completed} conclusões tiveram worklog **estimado** (sem cronometragem início/fim) — os números acima são conservadores.`
+      `- ${metrics.worklog_estimated_count} de ${metrics.tasks_concluidas} conclusões tiveram worklog **estimado** (sem cronometragem início/fim) — o story point derivado dele herda essa marca.`
     );
   } else {
-    lines.push("- Todas as conclusões contabilizadas têm worklog medido por marcadores início/fim.");
+    lines.push("- Todas as conclusões têm worklog medido por marcadores início/fim.");
   }
+  lines.push(
+    "- Story points calculados na conclusão a partir do tempo ativo medido — não estimados."
+  );
   lines.push(
     `- Métricas derivadas exclusivamente do livro-razão append-only (${Object.keys(state.issues).length} issue(s) rastreada(s)) — reproduzíveis e auditáveis.`
   );

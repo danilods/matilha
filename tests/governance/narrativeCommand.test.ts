@@ -12,7 +12,7 @@ afterEach(() => vi.restoreAllMocks());
 
 function ledgerDir(): string {
   const dir = mkdtempSync(join(tmpdir(), "matilha-narrcmd-"));
-  appendEvent(dir, makeGovernanceEvent({ type: "task.created", external_id: "BOIAA-1", issue_key: "BOIAA-1", actor, timestamp: "2026-05-19T10:00:00Z", payload: { story_points: 4 } }));
+  appendEvent(dir, makeGovernanceEvent({ type: "task.created", external_id: "BOIAA-1", issue_key: "BOIAA-1", actor, timestamp: "2026-05-19T10:00:00Z" }));
   appendEvent(dir, makeGovernanceEvent({ type: "task.started", external_id: "BOIAA-1", issue_key: "BOIAA-1", actor, timestamp: "2026-05-19T10:00:00Z" }));
   appendEvent(dir, makeGovernanceEvent({ type: "task.completed", external_id: "BOIAA-1", issue_key: "BOIAA-1", actor, timestamp: "2026-05-19T10:40:00Z", payload: { commits: ["c1"] } }));
   return dir;
