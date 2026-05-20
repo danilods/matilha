@@ -19,8 +19,9 @@ export const jiraTaskContractSchema = z.object({
     story_points: z.number().nonnegative().optional(),
     labels: z.array(z.string().min(1)).default([]),
     parent_external_id: z.string().min(1).optional(),
-    category: z.string().min(1).optional(),
+    category: z.string().min(1).regex(/^\S+$/, "category cannot contain whitespace (Jira labels split on spaces)").optional(),
     issue_kind: z.enum(["foundation", "component", "feature", "risk"]).optional(),
+    // task-level phase (matilha sprint + argos iteration); distinct from source.phase which is the legacy single matilha phase number
     phase: z
       .object({
         matilha: z.number().int().optional(),

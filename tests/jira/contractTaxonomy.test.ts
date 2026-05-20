@@ -42,4 +42,36 @@ describe("Jira contract taxonomy fields", () => {
     });
     expect(payload.fields.labels).toContain("frontend");
   });
+
+  it("emits matilha.taxonomy with all-null fields when category/issue_kind/phase are absent", () => {
+    const minimal = {
+      schema_version: 1 as const,
+      project_key: "BOIAA",
+      tasks: [
+        {
+          external_id: "argos-no-taxonomy",
+          summary: "task sem taxonomy",
+          description_markdown: "sem category, issue_kind ou phase"
+        }
+      ]
+    };
+    const payload = toJiraCreatePayloads(parseJiraTaskContract(minimal))[0]!;
+    expect(payload.properties["matilha.taxonomy"]).toEqual({
+      category: null,
+      issue_kind: null,
+      phase: null
+    });
+    const labels = payload.fields.labels as unknown[];
+    expect(labels).not.toContain(null);
+    expect(labels).not.toContain(undefined);
+  });
+
+  it("rejects a category that contains whitespace (Jira label footgun)", () => {
+    expect(() =>
+      parseJiraTaskContract({
+        ...base,
+        tasks: [{ ...base.tasks[0], category: "ia estruturacao" }]
+      })
+    ).toThrow();
+  });
 });
