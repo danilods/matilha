@@ -58,7 +58,7 @@ function projectIssue(sorted: GovernanceEvent[]): IssueState {
   let jiraKey: string | null = null;
   let agent: IssueState["agent"] = null;
   const intervals: Array<{ start: string; end: string }> = [];
-  const commits: string[] = [];
+  const commitSet = new Set<string>();
   let openStart: string | null = null;
   let sawStart = false;
 
@@ -86,13 +86,17 @@ function projectIssue(sorted: GovernanceEvent[]): IssueState {
         openStart = null;
       }
       for (const commit of event.payload.commits) {
-        if (!commits.includes(commit)) commits.push(commit);
+        commitSet.add(commit);
       }
       status = "completed";
     }
   }
 
-  const minutes = intervals.reduce((sum, i) => sum + diffMinutes(i.start, i.end), 0);
+  // An interval still open at the end of the fold is intentionally not counted.
+  // Worklog accrues only when an interval closes (task.paused / task.completed).
+  // Counting the open span up to "now" would change the worklog on every rebuild,
+  // breaking the determinism the design requires.
+  const minutes = Math.max(0, intervals.reduce((sum, i) => sum + diffMinutes(i.start, i.end), 0));
   const last = sorted[sorted.length - 1]!;
   return {
     jira_key: jiraKey,
@@ -101,7 +105,7 @@ function projectIssue(sorted: GovernanceEvent[]): IssueState {
     worklog_active_minutes: round1(minutes),
     worklog_estimated: status === "completed" && !sawStart,
     intervals,
-    commits,
+    commits: [...commitSet],
     agent,
     category,
     issue_kind: issueKind,

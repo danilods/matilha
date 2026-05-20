@@ -72,4 +72,31 @@ describe("governance projection", () => {
     ]).issues["BOIAA-5"]!;
     expect(issue.worklog_active_minutes).toBe(30);
   });
+
+  it("clamps worklog to zero when clock skew makes end precede start", () => {
+    const issue = buildProjection([
+      ev("task.started", "BOIAA-6", "2026-05-19T14:30:00Z"),
+      ev("task.completed", "BOIAA-6", "2026-05-19T14:00:00Z", { commits: [] })
+    ]).issues["BOIAA-6"]!;
+    expect(issue.worklog_active_minutes).toBe(0);
+  });
+
+  it("does not count an open interval for a still-running task", () => {
+    const issue = buildProjection([
+      ev("task.started", "BOIAA-7", "2026-05-19T14:00:00Z")
+    ]).issues["BOIAA-7"]!;
+    expect(issue.status).toBe("in_progress");
+    expect(issue.worklog_active_minutes).toBe(0);
+    expect(issue.intervals).toHaveLength(0);
+    expect(issue.worklog_estimated).toBe(false);
+  });
+
+  it("deduplicates commits across multiple task.completed events preserving first-appearance order", () => {
+    const issue = buildProjection([
+      ev("task.started", "BOIAA-8", "2026-05-19T14:00:00Z"),
+      ev("task.completed", "BOIAA-8", "2026-05-19T14:20:00Z", { commits: ["c1", "c2"] }),
+      ev("task.completed", "BOIAA-8", "2026-05-19T14:40:00Z", { commits: ["c2", "c3"] })
+    ]).issues["BOIAA-8"]!;
+    expect(issue.commits).toEqual(["c1", "c2", "c3"]);
+  });
 });
