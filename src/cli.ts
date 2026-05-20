@@ -13,6 +13,7 @@ import { listCommand } from "./list/listCommand";
 import { pullCommand } from "./pull/pullCommand";
 import { huntCommand } from "./hunt/huntCommand";
 import { gatherCommand } from "./gather/gatherCommand";
+import { governanceRebuildCommand } from "./governance/rebuildCommand";
 import { installPluginsCommand } from "./install-plugins/installPluginsCommand";
 import {
   jiraApplyCommand,
@@ -297,6 +298,22 @@ jira
       renderWorkflowGuide();
     } catch (err) {
       handleCommandError(err, "running 'matilha jira create'");
+    }
+  });
+
+const governance = program
+  .command("governance")
+  .description("Issue-grained governance ledger operations");
+
+governance
+  .command("rebuild")
+  .description("Rebuild docs/matilha/governance/state.json from the event ledger")
+  .action(() => {
+    try {
+      governanceRebuildCommand(process.cwd());
+      renderWorkflowGuide();
+    } catch (err) {
+      handleCommandError(err, "running 'matilha governance rebuild'");
     }
   });
 
