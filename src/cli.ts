@@ -14,6 +14,7 @@ import { pullCommand } from "./pull/pullCommand";
 import { huntCommand } from "./hunt/huntCommand";
 import { gatherCommand } from "./gather/gatherCommand";
 import { governanceRebuildCommand } from "./governance/rebuildCommand";
+import { taskCommand } from "./governance/taskCommand";
 import { installPluginsCommand } from "./install-plugins/installPluginsCommand";
 import {
   jiraApplyCommand,
@@ -316,6 +317,34 @@ governance
       handleCommandError(err, "running 'matilha governance rebuild'");
     }
   });
+
+const task = program
+  .command("task")
+  .description("Issue-grained governance time tracking");
+
+function collectCommit(value: string, previous: string[]): string[] {
+  return [...previous, value];
+}
+
+for (const action of ["start", "pause", "resume", "done"] as const) {
+  const cmd = task
+    .command(`${action} <id>`)
+    .description(`Record a task.${action === "done" ? "completed" : action} event for an issue`);
+  if (action === "pause") {
+    cmd.option("--reason <text>", "why the task is paused");
+  }
+  if (action === "done") {
+    cmd.option("--commit <sha>", "commit SHA closing the issue (repeatable)", collectCommit, []);
+  }
+  cmd.action((id: string, opts: { reason?: string; commit?: string[] }) => {
+    try {
+      taskCommand(process.cwd(), action, id, { reason: opts.reason, commit: opts.commit });
+      renderWorkflowGuide();
+    } catch (err) {
+      handleCommandError(err, `running 'matilha task ${action}'`);
+    }
+  });
+}
 
 program
   .command("install")
