@@ -32,6 +32,11 @@ export type PostCommitResult = {
   emitted: string[];
 };
 
+/**
+ * Reads the HEAD commit and emits a task.completed governance event per issue
+ * key found in its message. Precondition: the repo has at least one commit —
+ * always true when invoked from the installed post-commit hook.
+ */
 export async function runPostCommit(
   cwd: string,
   env: NodeJS.ProcessEnv = process.env

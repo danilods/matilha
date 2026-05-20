@@ -87,6 +87,7 @@ describe("runPostCommit", () => {
       commit(dir, "feat: cascata camada 2  BOIAA-1042");
       const result = await runPostCommit(dir);
       expect(result.keys).toEqual(["BOIAA-1042"]);
+      expect(result.emitted).toEqual(["BOIAA-1042"]);
 
       const events = readLedger(dir);
       expect(events).toHaveLength(1);
@@ -106,8 +107,10 @@ describe("runPostCommit", () => {
     const dir = gitRepo();
     try {
       commit(dir, "fix: corrige x  BOIAA-7");
-      await runPostCommit(dir);
-      await runPostCommit(dir);
+      const first = await runPostCommit(dir);
+      const second = await runPostCommit(dir);
+      expect(first.emitted).toEqual(["BOIAA-7"]);
+      expect(second.emitted).toEqual([]);
       expect(readLedger(dir)).toHaveLength(1);
     } finally {
       rmSync(dir, { recursive: true, force: true });
