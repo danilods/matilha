@@ -15,6 +15,11 @@ import { huntCommand } from "./hunt/huntCommand";
 import { gatherCommand } from "./gather/gatherCommand";
 import { governanceRebuildCommand } from "./governance/rebuildCommand";
 import { taskCommand } from "./governance/taskCommand";
+import {
+  hooksInstallCommand,
+  hooksRunCommitMsgCommand,
+  hooksRunPostCommitCommand
+} from "./governance/hooksCommand";
 import { installPluginsCommand } from "./install-plugins/installPluginsCommand";
 import {
   jiraApplyCommand,
@@ -300,6 +305,36 @@ jira
     } catch (err) {
       handleCommandError(err, "running 'matilha jira create'");
     }
+  });
+
+const hooks = jira
+  .command("hooks")
+  .description("Manage governance git hooks (commit-msg + post-commit)");
+
+hooks
+  .command("install")
+  .description("Install matilha governance git hooks into this repository")
+  .action(async () => {
+    try {
+      await hooksInstallCommand(process.cwd());
+      renderWorkflowGuide();
+    } catch (err) {
+      handleCommandError(err, "running 'matilha jira hooks install'");
+    }
+  });
+
+hooks
+  .command("run-commit-msg <messageFile>")
+  .description("(internal) invoked by the installed commit-msg git hook")
+  .action((messageFile: string) => {
+    hooksRunCommitMsgCommand(messageFile);
+  });
+
+hooks
+  .command("run-post-commit")
+  .description("(internal) invoked by the installed post-commit git hook")
+  .action(async () => {
+    await hooksRunPostCommitCommand(process.cwd());
   });
 
 const governance = program
