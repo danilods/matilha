@@ -14,6 +14,7 @@ import { pullCommand } from "./pull/pullCommand";
 import { huntCommand } from "./hunt/huntCommand";
 import { gatherCommand } from "./gather/gatherCommand";
 import { governanceRebuildCommand } from "./governance/rebuildCommand";
+import { importContractCommand } from "./governance/contractSeed";
 import { taskCommand } from "./governance/taskCommand";
 import {
   hooksInstallCommand,
@@ -350,6 +351,18 @@ governance
       renderWorkflowGuide();
     } catch (err) {
       handleCommandError(err, "running 'matilha governance rebuild'");
+    }
+  });
+
+governance
+  .command("import-contract <file>")
+  .description("Seed task.created events into the ledger from a Jira task contract")
+  .action((file: string) => {
+    try {
+      importContractCommand(process.cwd(), file);
+      renderWorkflowGuide();
+    } catch (err) {
+      handleCommandError(err, "running 'matilha governance import-contract'");
     }
   });
 
