@@ -10,6 +10,7 @@ export async function hooksInstallCommand(cwd: string): Promise<void> {
   }
 }
 
+/** Invoked by the installed git hook. Never throws — errors are logged to stderr. */
 export function hooksRunCommitMsgCommand(messageFile: string): void {
   try {
     runCommitMsg(messageFile);
@@ -18,6 +19,7 @@ export function hooksRunCommitMsgCommand(messageFile: string): void {
   }
 }
 
+/** Invoked by the installed git hook. Never throws — errors are logged to stderr. */
 export async function hooksRunPostCommitCommand(cwd: string): Promise<void> {
   try {
     const result = await runPostCommit(cwd);

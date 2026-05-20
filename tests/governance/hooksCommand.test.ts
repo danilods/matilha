@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   hooksInstallCommand,
+  hooksRunCommitMsgCommand,
   hooksRunPostCommitCommand
 } from "../../src/governance/hooksCommand";
 
@@ -32,5 +33,11 @@ describe("hooks commands", () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+
+  it("hooksRunCommitMsgCommand swallows errors and never throws on missing file", () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(() => hooksRunCommitMsgCommand("/nonexistent/path/COMMIT_EDITMSG")).not.toThrow();
+    expect(spy).toHaveBeenCalled();
   });
 });
