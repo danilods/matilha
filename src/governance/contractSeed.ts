@@ -23,7 +23,6 @@ export function seedTaskCreatedEvents(
   for (const task of contract.tasks) {
     const payload: Record<string, unknown> = {};
     if (task.summary) payload.summary = task.summary;
-    if (task.story_points !== undefined) payload.story_points = task.story_points;
     if (task.category !== undefined) payload.category = task.category;
     if (task.issue_kind !== undefined) payload.issue_kind = task.issue_kind;
 

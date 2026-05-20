@@ -12,6 +12,8 @@ function writeContract(dir: string): string {
     JSON.stringify({
       schema_version: 1,
       project_key: "BOIAA",
+      // story_points fica no contrato de propósito: o seeder deve IGNORÁ-lo
+      // (story points são medidos no fechamento da task, não vêm da criação).
       tasks: [
         {
           external_id: "BOIAA-1042",
@@ -35,7 +37,7 @@ function writeContract(dir: string): string {
 }
 
 describe("seedTaskCreatedEvents", () => {
-  it("emits one task.created event per contract task carrying story points", () => {
+  it("emits one task.created event per contract task, without story points", () => {
     const dir = mkdtempSync(join(tmpdir(), "matilha-seed-"));
     try {
       const result = seedTaskCreatedEvents(dir, writeContract(dir));
@@ -47,7 +49,7 @@ describe("seedTaskCreatedEvents", () => {
       expect(first.type).toBe("task.created");
       expect(first.issue_key).toBe("BOIAA-1042");
       if (first.type === "task.created") {
-        expect(first.payload.story_points).toBe(3);
+        expect(first.payload).not.toHaveProperty("story_points");
         expect(first.payload.category).toBe("frontend");
         expect(first.payload.issue_kind).toBe("foundation");
       }
@@ -55,7 +57,7 @@ describe("seedTaskCreatedEvents", () => {
       const second = events.find((e) => e.external_id === "BOIAA-1043")!;
       expect(second.type).toBe("task.created");
       if (second.type === "task.created") {
-        expect(second.payload.story_points).toBe(5);
+        expect(second.payload).not.toHaveProperty("story_points");
         expect(second.payload).not.toHaveProperty("category");
         expect(second.payload).not.toHaveProperty("issue_kind");
       }
