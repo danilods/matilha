@@ -326,10 +326,17 @@ function collectCommit(value: string, previous: string[]): string[] {
   return [...previous, value];
 }
 
+const TASK_EVENT_NAME: Record<"start" | "pause" | "resume" | "done", string> = {
+  start: "task.started",
+  pause: "task.paused",
+  resume: "task.resumed",
+  done: "task.completed"
+};
+
 for (const action of ["start", "pause", "resume", "done"] as const) {
   const cmd = task
     .command(`${action} <id>`)
-    .description(`Record a task.${action === "done" ? "completed" : action} event for an issue`);
+    .description(`Record a ${TASK_EVENT_NAME[action]} event for an issue`);
   if (action === "pause") {
     cmd.option("--reason <text>", "why the task is paused");
   }

@@ -56,6 +56,24 @@ describe("matilha task commands", () => {
     }
   });
 
+  it("records start → pause → resume and leaves the issue in_progress", () => {
+    const cwd = tmp();
+    try {
+      vi.spyOn(console, "log").mockImplementation(() => {});
+      taskCommand(cwd, "start", "BOIAA-9", {});
+      taskCommand(cwd, "pause", "BOIAA-9", {});
+      taskCommand(cwd, "resume", "BOIAA-9", {});
+
+      const events = readLedger(cwd);
+      expect(events.map((e) => e.type)).toEqual(["task.started", "task.paused", "task.resumed"]);
+
+      const issue = readState(cwd)!.issues["BOIAA-9"]!;
+      expect(issue.status).toBe("in_progress");
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+
   it("leaves issue_key null for a non-Jira-shaped id", () => {
     const cwd = tmp();
     try {
