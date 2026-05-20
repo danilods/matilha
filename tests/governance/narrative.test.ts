@@ -36,4 +36,12 @@ describe("renderNarrative", () => {
     const md = renderNarrative(state, metrics);
     expect(md).toContain("worklog **estimado**");
   });
+
+  it("shows empty-ledger message when there are no completions", () => {
+    const state = buildProjection([]);
+    const metrics = computeMetrics(state, { baselineHoursPerPoint: 8, generatedAt: "2026-05-20T00:00:00Z" });
+    const md = renderNarrative(state, metrics);
+    expect(md).toContain("Nenhuma task concluída registrada ainda");
+    expect(md).not.toContain("worklog medido");
+  });
 });

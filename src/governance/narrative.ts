@@ -28,7 +28,9 @@ export function renderNarrative(state: GovernanceState, metrics: GovernanceMetri
   lines.push("");
   lines.push("## Leitura honesta");
   lines.push("");
-  if (metrics.worklog_estimated_count > 0) {
+  if (metrics.issues_completed === 0) {
+    lines.push("- Nenhuma task concluída registrada ainda.");
+  } else if (metrics.worklog_estimated_count > 0) {
     lines.push(
       `- ${metrics.worklog_estimated_count} de ${metrics.issues_completed} conclusões tiveram worklog **estimado** (sem cronometragem início/fim) — os números acima são conservadores.`
     );
