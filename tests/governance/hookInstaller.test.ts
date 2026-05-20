@@ -56,9 +56,16 @@ describe("installGovernanceHooks", () => {
       const postResult = results.find((r) => r.hook === "post-commit")!;
       expect(postResult.action).toBe("appended");
 
+      // commit-msg was absent → must have been created (heterogeneous starting state)
+      const commitMsgResult = results.find((r) => r.hook === "commit-msg")!;
+      expect(commitMsgResult.action).toBe("created");
+
       const content = readFileSync(postCommitPath, "utf-8");
       expect(content).toContain("echo existing-hook");
       expect(content).toContain("# >>> matilha governance >>>");
+
+      // pre-existing file had default 0o644 permissions; installer must chmod it 0o755
+      expect(statSync(postCommitPath).mode & 0o111).not.toBe(0);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

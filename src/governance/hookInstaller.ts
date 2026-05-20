@@ -4,6 +4,8 @@ import { execGit } from "../hunt/execGit";
 
 const BLOCK_START = "# >>> matilha governance >>>";
 const BLOCK_END = "# <<< matilha governance <<<";
+// Non-greedy middle ([\s\S]*?) prevents two separately-inserted matilha blocks
+// from collapsing into one during replace — mirrors the intent in writeClaudeMd.ts.
 const BLOCK_REGEX = /# >>> matilha governance >>>[\s\S]*?# <<< matilha governance <<</;
 
 const HOOK_BLOCKS: Record<string, string> = {
