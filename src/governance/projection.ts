@@ -1,5 +1,8 @@
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { z } from "zod";
 import type { GovernanceEvent } from "./events";
+import { MatilhaUserError } from "../ui/errorFormat";
 
 export const GOVERNANCE_STATE_VERSION = 1;
 
@@ -120,4 +123,43 @@ function diffMinutes(start: string, end: string): number {
 
 function round1(value: number): number {
   return Math.round(value * 10) / 10;
+}
+
+export function statePath(cwd: string): string {
+  return join(cwd, "docs", "matilha", "governance", "state.json");
+}
+
+export function writeState(cwd: string, state: GovernanceState): void {
+  const path = statePath(cwd);
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, `${JSON.stringify(state, null, 2)}\n`, "utf-8");
+}
+
+export function readState(cwd: string): GovernanceState | null {
+  const path = statePath(cwd);
+  if (!existsSync(path)) return null;
+
+  const raw = readFileSync(path, "utf-8");
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    throw new MatilhaUserError({
+      summary: "invalid governance state.json",
+      context: `matilha was reading ${path}`,
+      problem: err instanceof Error ? err.message : String(err),
+      nextActions: ["delete state.json and rerun 'matilha governance rebuild'"]
+    });
+  }
+
+  const result = governanceStateSchema.safeParse(parsed);
+  if (!result.success) {
+    throw new MatilhaUserError({
+      summary: "governance state.json fails schema validation",
+      context: `matilha was validating ${path}`,
+      problem: result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; "),
+      nextActions: ["delete state.json and rerun 'matilha governance rebuild'"]
+    });
+  }
+  return result.data;
 }

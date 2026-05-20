@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { buildProjection } from "../../src/governance/projection";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { buildProjection, writeState, readState, statePath } from "../../src/governance/projection";
 import { makeGovernanceEvent, type GovernanceEventType } from "../../src/governance/events";
 
 const actor = { tool: "claude-code", model: "claude-opus-4-7" };
@@ -98,5 +101,31 @@ describe("governance projection", () => {
       ev("task.completed", "BOIAA-8", "2026-05-19T14:40:00Z", { commits: ["c2", "c3"] })
     ]).issues["BOIAA-8"]!;
     expect(issue.commits).toEqual(["c1", "c2", "c3"]);
+  });
+});
+
+describe("governance projection persistence", () => {
+  it("writes and reads state.json round-trip", () => {
+    const cwd = mkdtempSync(join(tmpdir(), "matilha-state-"));
+    try {
+      const state = buildProjection(
+        [ev("task.started", "BOIAA-9", "2026-05-19T14:00:00Z")],
+        "2026-05-19T15:00:00Z"
+      );
+      writeState(cwd, state);
+      expect(statePath(cwd)).toMatch(/docs\/matilha\/governance\/state\.json$/);
+      expect(readState(cwd)).toEqual(state);
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+
+  it("returns null when state.json does not exist", () => {
+    const cwd = mkdtempSync(join(tmpdir(), "matilha-state-"));
+    try {
+      expect(readState(cwd)).toBeNull();
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+    }
   });
 });
