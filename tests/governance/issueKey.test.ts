@@ -21,6 +21,7 @@ describe("issue key extraction", () => {
   it("resolves the pattern from env, falling back to the default", () => {
     expect(resolveIssueKeyPattern({})).toBe(DEFAULT_ISSUE_KEY_PATTERN);
     expect(resolveIssueKeyPattern({ MATILHA_ISSUE_KEY_PATTERN: "JIRA-\\d+" })).toBe("JIRA-\\d+");
+    expect(resolveIssueKeyPattern({ MATILHA_ISSUE_KEY_PATTERN: "" })).toBe(DEFAULT_ISSUE_KEY_PATTERN);
   });
 
   it("honors a custom pattern", () => {

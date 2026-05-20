@@ -3,7 +3,7 @@ import { MatilhaUserError } from "../ui/errorFormat";
 export const DEFAULT_ISSUE_KEY_PATTERN = "[A-Z][A-Z0-9]+-\\d+";
 
 export function resolveIssueKeyPattern(env: NodeJS.ProcessEnv = process.env): string {
-  return env.MATILHA_ISSUE_KEY_PATTERN ?? DEFAULT_ISSUE_KEY_PATTERN;
+  return env.MATILHA_ISSUE_KEY_PATTERN || DEFAULT_ISSUE_KEY_PATTERN;
 }
 
 export function extractIssueKeys(
