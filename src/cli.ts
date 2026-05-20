@@ -16,6 +16,7 @@ import { gatherCommand } from "./gather/gatherCommand";
 import { governanceRebuildCommand } from "./governance/rebuildCommand";
 import { importContractCommand } from "./governance/contractSeed";
 import { metricsCommand } from "./governance/metricsCommand";
+import { narrativeCommand } from "./governance/narrativeCommand";
 import { taskCommand } from "./governance/taskCommand";
 import {
   hooksInstallCommand,
@@ -377,6 +378,19 @@ program
       if (!opts.json) renderWorkflowGuide();
     } catch (err) {
       handleCommandError(err, "running 'matilha metrics'");
+    }
+  });
+
+program
+  .command("narrative")
+  .description("Generate the executive paradigm-shift narrative from the ledger")
+  .option("--output <file>", "write the narrative markdown to a file instead of stdout")
+  .action((opts: { output?: string }) => {
+    try {
+      narrativeCommand(process.cwd(), { output: opts.output });
+      renderWorkflowGuide();
+    } catch (err) {
+      handleCommandError(err, "running 'matilha narrative'");
     }
   });
 
