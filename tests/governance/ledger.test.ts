@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { appendEvent, readLedger, ledgerPath } from "../../src/governance/ledger";
 import { makeGovernanceEvent } from "../../src/governance/events";
+import { MatilhaUserError } from "../../src/ui/errorFormat";
 
 const actor = { tool: "claude-code" };
 
@@ -60,6 +61,28 @@ describe("governance ledger", () => {
       appendEvent(cwd, e1);
       appendFileSync(ledgerPath(cwd), "{ not json\n", "utf-8");
       expect(() => readLedger(cwd)).toThrow(/governance ledger line/);
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+
+  it("throws a line-aware error when a ledger line is valid JSON but fails schema validation", () => {
+    const cwd = tmp();
+    try {
+      const e1 = makeGovernanceEvent({ type: "task.started", external_id: "BOIAA-4", actor });
+      appendEvent(cwd, e1);
+      // Valid JSON but missing required fields (event_id, external_id, timestamp, actor)
+      appendFileSync(ledgerPath(cwd), JSON.stringify({ schema_version: 1, type: "task.started" }) + "\n", "utf-8");
+      let thrown: unknown;
+      try {
+        readLedger(cwd);
+      } catch (err) {
+        thrown = err;
+      }
+      expect(thrown).toBeInstanceOf(MatilhaUserError);
+      const userErr = thrown as MatilhaUserError;
+      expect(userErr.matilhaError.summary).toMatch(/governance ledger line/);
+      expect(userErr.matilhaError.context).toMatch(/events\.ndjson:2/);
     } finally {
       rmSync(cwd, { recursive: true, force: true });
     }

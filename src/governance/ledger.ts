@@ -14,8 +14,8 @@ export function readLedger(cwd: string): GovernanceEvent[] {
   const raw = readFileSync(path, "utf-8");
   const events: GovernanceEvent[] = [];
   const lines = raw.split("\n");
-  for (let index = 0; index < lines.length; index++) {
-    const trimmed = lines[index]!.trim();
+  for (const [index, line] of lines.entries()) {
+    const trimmed = line.trim();
     if (trimmed.length === 0) continue;
     let parsed: unknown;
     try {
@@ -28,7 +28,22 @@ export function readLedger(cwd: string): GovernanceEvent[] {
         nextActions: ["fix or remove the malformed line, then rerun 'matilha governance rebuild'"]
       });
     }
-    events.push(parseGovernanceEvent(parsed));
+    try {
+      events.push(parseGovernanceEvent(parsed));
+    } catch (err) {
+      const problem =
+        err instanceof MatilhaUserError
+          ? err.matilhaError.problem
+          : err instanceof Error
+            ? err.message
+            : String(err);
+      throw new MatilhaUserError({
+        summary: "invalid governance ledger line",
+        context: `matilha was reading ${path}:${index + 1}`,
+        problem,
+        nextActions: ["fix or remove the malformed line, then rerun 'matilha governance rebuild'"]
+      });
+    }
   }
   return events;
 }
