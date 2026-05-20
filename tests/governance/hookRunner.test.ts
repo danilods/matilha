@@ -34,4 +34,30 @@ describe("runCommitMsg", () => {
       rmSync(dir, { recursive: true, force: true });
     }
   });
+
+  it("uses the custom MATILHA_ISSUE_KEY_PATTERN from env instead of the default pattern", () => {
+    const dir = mkdtempSync(join(tmpdir(), "matilha-cm-"));
+    try {
+      const file = join(dir, "COMMIT_EDITMSG");
+      // Content contains "#4567" — matches the custom pattern "#\d+" but NOT the
+      // default pattern "[A-Z][A-Z0-9]+-\d+" (no uppercase-letter prefix), so a
+      // regression that ignores the env argument would warn instead of returning the key.
+      writeFileSync(file, "chore: ticket #4567 resolved\n", "utf-8");
+
+      // Primary assertion: custom env pattern wires through to key extraction.
+      const result = runCommitMsg(file, { MATILHA_ISSUE_KEY_PATTERN: "#\\d+" });
+      expect(result.keys).toEqual(["#4567"]);
+      expect(result.warned).toBe(false);
+
+      // Optional sanity-check: the default pattern does NOT match the same content,
+      // confirming the env override is doing real work.
+      const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const defaultResult = runCommitMsg(file);
+      expect(defaultResult.keys).toEqual([]);
+      expect(defaultResult.warned).toBe(true);
+      expect(errSpy).toHaveBeenCalled();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
 });
