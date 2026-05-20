@@ -1,5 +1,9 @@
 import { readFileSync } from "node:fs";
 import { extractIssueKeys, resolveIssueKeyPattern } from "./issueKey";
+import { execGit } from "../hunt/execGit";
+import { makeGovernanceEvent, resolveActor, looksLikeIssueKey } from "./events";
+import { appendEvent, readLedger } from "./ledger";
+import { buildProjection, writeState } from "./projection";
 
 export type CommitMsgResult = {
   keys: string[];
@@ -20,4 +24,40 @@ export function runCommitMsg(
     return { keys, warned: true };
   }
   return { keys, warned: false };
+}
+
+export type PostCommitResult = {
+  sha: string;
+  keys: string[];
+  emitted: string[];
+};
+
+export async function runPostCommit(
+  cwd: string,
+  env: NodeJS.ProcessEnv = process.env
+): Promise<PostCommitResult> {
+  const sha = (await execGit(["log", "-1", "--format=%H"], { cwd })).stdout.trim();
+  const message = (await execGit(["log", "-1", "--format=%B"], { cwd })).stdout;
+  const keys = extractIssueKeys(message, resolveIssueKeyPattern(env));
+  const actor = resolveActor(env);
+  const summary = message.split("\n")[0]?.trim() || sha;
+  const emitted: string[] = [];
+
+  for (const key of keys) {
+    const event = makeGovernanceEvent({
+      type: "task.completed",
+      external_id: key,
+      issue_key: looksLikeIssueKey(key) ? key : null,
+      actor,
+      event_id: `post-commit:${sha}:${key}`,
+      payload: { commits: [sha], summary_markdown: summary }
+    });
+    const result = appendEvent(cwd, event);
+    if (result.status === "written") emitted.push(key);
+  }
+
+  if (keys.length > 0) {
+    writeState(cwd, buildProjection(readLedger(cwd)));
+  }
+  return { sha, keys, emitted };
 }

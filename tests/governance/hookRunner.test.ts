@@ -2,7 +2,9 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { runCommitMsg } from "../../src/governance/hookRunner";
+import { execFileSync } from "node:child_process";
+import { runCommitMsg, runPostCommit } from "../../src/governance/hookRunner";
+import { readLedger } from "../../src/governance/ledger";
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -56,6 +58,81 @@ describe("runCommitMsg", () => {
       expect(defaultResult.keys).toEqual([]);
       expect(defaultResult.warned).toBe(true);
       expect(errSpy).toHaveBeenCalled();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("runPostCommit", () => {
+  function gitRepo(): string {
+    const dir = mkdtempSync(join(tmpdir(), "matilha-postcommit-"));
+    const run = (args: string[]) => execFileSync("git", args, { cwd: dir, stdio: "pipe" });
+    run(["init", "-q"]);
+    run(["config", "user.email", "test@example.com"]);
+    run(["config", "user.name", "Matilha Test"]);
+    return dir;
+  }
+
+  function commit(dir: string, message: string): void {
+    const run = (args: string[]) => execFileSync("git", args, { cwd: dir, stdio: "pipe" });
+    writeFileSync(join(dir, `f-${Date.now()}-${Math.random()}.txt`), "x", "utf-8");
+    run(["add", "-A"]);
+    run(["commit", "-q", "-m", message]);
+  }
+
+  it("emits a task.completed event for the issue key in the HEAD commit", async () => {
+    const dir = gitRepo();
+    try {
+      commit(dir, "feat: cascata camada 2  BOIAA-1042");
+      const result = await runPostCommit(dir);
+      expect(result.keys).toEqual(["BOIAA-1042"]);
+
+      const events = readLedger(dir);
+      expect(events).toHaveLength(1);
+      const event = events[0]!;
+      expect(event.type).toBe("task.completed");
+      expect(event.external_id).toBe("BOIAA-1042");
+      expect(event.issue_key).toBe("BOIAA-1042");
+      if (event.type === "task.completed") {
+        expect(event.payload.commits).toEqual([result.sha]);
+      }
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("is idempotent — re-running post-commit on the same HEAD does not duplicate", async () => {
+    const dir = gitRepo();
+    try {
+      commit(dir, "fix: corrige x  BOIAA-7");
+      await runPostCommit(dir);
+      await runPostCommit(dir);
+      expect(readLedger(dir)).toHaveLength(1);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("emits one event per distinct key for a multi-key commit", async () => {
+    const dir = gitRepo();
+    try {
+      commit(dir, "chore: BOIAA-1 e BOIAA-2 juntos");
+      const result = await runPostCommit(dir);
+      expect([...result.keys].sort()).toEqual(["BOIAA-1", "BOIAA-2"]);
+      expect(readLedger(dir)).toHaveLength(2);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("records nothing when the commit message has no issue key", async () => {
+    const dir = gitRepo();
+    try {
+      commit(dir, "chore: arruma o linter");
+      const result = await runPostCommit(dir);
+      expect(result.keys).toEqual([]);
+      expect(readLedger(dir)).toEqual([]);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
