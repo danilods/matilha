@@ -28,6 +28,7 @@ describe("matilha metrics command", () => {
       const output = lines.join("\n");
       expect(output).toContain("minutes per point");
       expect(output).toContain("compression factor");
+      expect(output).toContain("10");
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -42,6 +43,21 @@ describe("matilha metrics command", () => {
       const parsed = JSON.parse(lines.join("\n"));
       expect(parsed.story_points_completed).toBe(4);
       expect(parsed.minutos_por_ponto).toBe(10);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("shows estimated-worklog dim note when completion has no start marker", () => {
+    const dir = mkdtempSync(join(tmpdir(), "matilha-metricscmd-est-"));
+    try {
+      appendEvent(dir, makeGovernanceEvent({ type: "task.created", external_id: "BOIAA-9", issue_key: "BOIAA-9", actor, timestamp: "2026-05-19T09:00:00Z", payload: { story_points: 4 } }));
+      appendEvent(dir, makeGovernanceEvent({ type: "task.completed", external_id: "BOIAA-9", issue_key: "BOIAA-9", actor, timestamp: "2026-05-19T09:40:00Z", payload: { commits: ["c1"] } }));
+      const lines: string[] = [];
+      vi.spyOn(console, "log").mockImplementation((line?: unknown) => { lines.push(String(line)); });
+      metricsCommand(dir, {});
+      const output = lines.join("\n");
+      expect(output).toContain("estimated");
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

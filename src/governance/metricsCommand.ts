@@ -25,7 +25,7 @@ export function metricsCommand(cwd: string, opts: MetricsCommandOptions = {}): v
   console.log(`  minutes per point:    ${fmt(metrics.minutos_por_ponto)}`);
   console.log(`  velocity (SP/day):    ${fmt(metrics.velocidade_sp_por_dia)}`);
   console.log(
-    `  compression factor:   ${fmt(metrics.fator_compressao)}x  (baseline ${metrics.baseline_hours_per_point}h/point)`
+    `  compression factor:   ${fmt(metrics.fator_compressao)}${metrics.fator_compressao !== null ? "x" : ""}  (baseline ${metrics.baseline_hours_per_point}h/point)`
   );
   console.log(`  avg lead time (min):  ${fmt(metrics.lead_time_medio_minutos)}`);
   if (metrics.worklog_estimated_count > 0) {
