@@ -19,6 +19,14 @@ export const jiraTaskContractSchema = z.object({
     story_points: z.number().nonnegative().optional(),
     labels: z.array(z.string().min(1)).default([]),
     parent_external_id: z.string().min(1).optional(),
+    category: z.string().min(1).optional(),
+    issue_kind: z.enum(["foundation", "component", "feature", "risk"]).optional(),
+    phase: z
+      .object({
+        matilha: z.number().int().optional(),
+        argos: z.string().min(1).optional()
+      })
+      .optional(),
     source: z.object({
       spec: z.string().min(1).optional(),
       plan: z.string().min(1).optional(),
@@ -101,7 +109,13 @@ export function readJiraTaskContract(path: string): JiraTaskContract {
 
 export function toJiraCreatePayloads(contract: JiraTaskContract): JiraCreatePayload[] {
   return contract.tasks.map((task) => {
-    const labels = [...new Set([...contract.defaults.labels, ...task.labels])];
+    const labels = [
+      ...new Set([
+        ...contract.defaults.labels,
+        ...task.labels,
+        ...(task.category ? [task.category] : [])
+      ])
+    ];
     const storyPointsField = contract.defaults.story_points_field;
     const fields: Record<string, unknown> = {
       project: { key: contract.project_key },
@@ -120,7 +134,12 @@ export function toJiraCreatePayloads(contract: JiraTaskContract): JiraCreatePayl
       fields,
       properties: {
         "matilha.external_id": { external_id: task.external_id },
-        "matilha.source": task.source
+        "matilha.source": task.source,
+        "matilha.taxonomy": {
+          category: task.category ?? null,
+          issue_kind: task.issue_kind ?? null,
+          phase: task.phase ?? null
+        }
       },
       comments: task.comments.map((comment) => ({ body: markdownToAdf(comment.body_markdown) })),
       worklogs: task.worklogs.map((worklog) => {
