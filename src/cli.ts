@@ -15,6 +15,7 @@ import { huntCommand } from "./hunt/huntCommand";
 import { gatherCommand } from "./gather/gatherCommand";
 import { governanceRebuildCommand } from "./governance/rebuildCommand";
 import { importContractCommand } from "./governance/contractSeed";
+import { metricsCommand } from "./governance/metricsCommand";
 import { taskCommand } from "./governance/taskCommand";
 import {
   hooksInstallCommand,
@@ -363,6 +364,19 @@ governance
       renderWorkflowGuide();
     } catch (err) {
       handleCommandError(err, "running 'matilha governance import-contract'");
+    }
+  });
+
+program
+  .command("metrics")
+  .description("Aggregate issue-grained governance metrics from the ledger")
+  .option("--json", "output as JSON for scripting", false)
+  .action((opts: { json: boolean }) => {
+    try {
+      metricsCommand(process.cwd(), { json: opts.json });
+      if (!opts.json) renderWorkflowGuide();
+    } catch (err) {
+      handleCommandError(err, "running 'matilha metrics'");
     }
   });
 
