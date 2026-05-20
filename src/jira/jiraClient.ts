@@ -39,6 +39,36 @@ export class JiraClient {
     });
   }
 
+  async getTransitions(issueKey: string): Promise<Array<{ id: string; name: string }>> {
+    const result = (await this.request(
+      `/rest/api/3/issue/${encodeURIComponent(issueKey)}/transitions`,
+      { method: "GET" }
+    )) as { transitions?: Array<{ id: string; name: string }> };
+    return result.transitions ?? [];
+  }
+
+  async transitionIssue(issueKey: string, transitionName: string): Promise<void> {
+    const transitions = await this.getTransitions(issueKey);
+    const match = transitions.find(
+      (t) => t.name.toLowerCase() === transitionName.toLowerCase()
+    );
+    if (!match) {
+      throw new MatilhaUserError({
+        summary: `Jira transition "${transitionName}" not available`,
+        context: `matilha jira tried to transition ${issueKey}`,
+        problem: `available transitions: ${transitions.map((t) => t.name).join(", ") || "none"}`,
+        nextActions: [
+          "confirm the Jira workflow allows this transition from the issue's current status",
+          "set JIRA_TRANSITION_IN_PROGRESS / JIRA_TRANSITION_DONE to match your Jira workflow"
+        ]
+      });
+    }
+    await this.request(`/rest/api/3/issue/${encodeURIComponent(issueKey)}/transitions`, {
+      method: "POST",
+      body: JSON.stringify({ transition: { id: match.id } })
+    });
+  }
+
   private async request(path: string, init: RequestInit): Promise<unknown> {
     const auth = Buffer.from(`${this.config.email}:${this.config.apiToken}`).toString("base64");
     const response = await fetch(`${this.config.baseUrl}${path}`, {

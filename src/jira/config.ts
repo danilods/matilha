@@ -6,6 +6,7 @@ export type JiraConfig = {
   apiToken: string;
   projectKey: string;
   storyPointsField: string;
+  transitions: { inProgress: string; done: string };
 };
 
 export type JiraConfigOverrides = {
@@ -21,7 +22,11 @@ export function resolveJiraConfig(
     email: env.JIRA_EMAIL ?? "",
     apiToken: env.JIRA_API_TOKEN ?? "",
     projectKey: overrides.projectKey ?? env.JIRA_PROJECT_KEY ?? "",
-    storyPointsField: env.JIRA_STORY_POINTS_FIELD ?? env.JIRA_STORY_POINTS_CUSTOM_FIELD ?? "customfield_10016"
+    storyPointsField: env.JIRA_STORY_POINTS_FIELD ?? env.JIRA_STORY_POINTS_CUSTOM_FIELD ?? "customfield_10016",
+    transitions: {
+      inProgress: env.JIRA_TRANSITION_IN_PROGRESS ?? "In Progress",
+      done: env.JIRA_TRANSITION_DONE ?? "Done"
+    }
   };
 
   const missing = [
