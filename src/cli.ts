@@ -368,13 +368,18 @@ governance
     }
   });
 
+function collectRepeatable(value: string, previous: string[]): string[] {
+  return [...previous, value];
+}
+
 program
   .command("metrics")
   .description("Aggregate issue-grained governance metrics from the ledger")
   .option("--json", "output as JSON for scripting", false)
-  .action((opts: { json: boolean }) => {
+  .option("--ledger <path>", "additional ledger repo root to aggregate (repeatable)", collectRepeatable, [])
+  .action((opts: { json: boolean; ledger: string[] }) => {
     try {
-      metricsCommand(process.cwd(), { json: opts.json });
+      metricsCommand(process.cwd(), { json: opts.json, ledger: opts.ledger });
       if (!opts.json) renderWorkflowGuide();
     } catch (err) {
       handleCommandError(err, "running 'matilha metrics'");
@@ -385,9 +390,10 @@ program
   .command("narrative")
   .description("Generate the executive paradigm-shift narrative from the ledger")
   .option("--output <file>", "write the narrative markdown to a file instead of stdout")
-  .action((opts: { output?: string }) => {
+  .option("--ledger <path>", "additional ledger repo root to aggregate (repeatable)", collectRepeatable, [])
+  .action((opts: { output?: string; ledger: string[] }) => {
     try {
-      narrativeCommand(process.cwd(), { output: opts.output });
+      narrativeCommand(process.cwd(), { output: opts.output, ledger: opts.ledger });
       if (!opts.output) renderWorkflowGuide();
     } catch (err) {
       handleCommandError(err, "running 'matilha narrative'");

@@ -1,16 +1,17 @@
 import { writeFileSync } from "node:fs";
 import pc from "picocolors";
-import { readLedger } from "./ledger";
 import { buildProjection } from "./projection";
 import { computeMetrics, resolveTraditionalHoursPerPoint } from "./metrics";
 import { renderNarrative } from "./narrative";
+import { readMergedLedger, resolveLedgerRoots } from "./ledgerSources";
 
 export type NarrativeCommandOptions = {
   output?: string;
+  ledger?: string[];
 };
 
 export function narrativeCommand(cwd: string, opts: NarrativeCommandOptions = {}): void {
-  const state = buildProjection(readLedger(cwd));
+  const state = buildProjection(readMergedLedger(resolveLedgerRoots(cwd, { ledger: opts.ledger })));
   const metrics = computeMetrics(state, {
     baselineHoursPerPoint: resolveTraditionalHoursPerPoint()
   });

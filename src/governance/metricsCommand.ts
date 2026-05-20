@@ -1,14 +1,15 @@
 import pc from "picocolors";
-import { readLedger } from "./ledger";
 import { buildProjection } from "./projection";
 import { computeMetrics, resolveTraditionalHoursPerPoint } from "./metrics";
+import { readMergedLedger, resolveLedgerRoots } from "./ledgerSources";
 
 export type MetricsCommandOptions = {
   json?: boolean;
+  ledger?: string[];
 };
 
 export function metricsCommand(cwd: string, opts: MetricsCommandOptions = {}): void {
-  const state = buildProjection(readLedger(cwd));
+  const state = buildProjection(readMergedLedger(resolveLedgerRoots(cwd, { ledger: opts.ledger })));
   const metrics = computeMetrics(state, {
     baselineHoursPerPoint: resolveTraditionalHoursPerPoint()
   });

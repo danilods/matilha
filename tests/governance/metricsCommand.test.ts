@@ -10,11 +10,11 @@ const actor = { tool: "claude-code" };
 
 afterEach(() => vi.restoreAllMocks());
 
-function ledgerWithOneCompletedIssue(): string {
+function ledgerWithOneCompletedIssue(externalId = "BOIAA-1"): string {
   const dir = mkdtempSync(join(tmpdir(), "matilha-metricscmd-"));
-  appendEvent(dir, makeGovernanceEvent({ type: "task.created", external_id: "BOIAA-1", issue_key: "BOIAA-1", actor, timestamp: "2026-05-19T10:00:00Z", payload: { story_points: 4 } }));
-  appendEvent(dir, makeGovernanceEvent({ type: "task.started", external_id: "BOIAA-1", issue_key: "BOIAA-1", actor, timestamp: "2026-05-19T10:00:00Z" }));
-  appendEvent(dir, makeGovernanceEvent({ type: "task.completed", external_id: "BOIAA-1", issue_key: "BOIAA-1", actor, timestamp: "2026-05-19T10:40:00Z", payload: { commits: ["c1"] } }));
+  appendEvent(dir, makeGovernanceEvent({ type: "task.created", external_id: externalId, issue_key: externalId, actor, timestamp: "2026-05-19T10:00:00Z", payload: { story_points: 4 } }));
+  appendEvent(dir, makeGovernanceEvent({ type: "task.started", external_id: externalId, issue_key: externalId, actor, timestamp: "2026-05-19T10:00:00Z" }));
+  appendEvent(dir, makeGovernanceEvent({ type: "task.completed", external_id: externalId, issue_key: externalId, actor, timestamp: "2026-05-19T10:40:00Z", payload: { commits: ["c1"] } }));
   return dir;
 }
 
@@ -60,6 +60,23 @@ describe("matilha metrics command", () => {
       expect(output).toContain("estimated");
     } finally {
       rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("aggregates ledgers from multiple repo roots passed via opts.ledger", () => {
+    const repoA = ledgerWithOneCompletedIssue("BOIAA-1");
+    const repoB = ledgerWithOneCompletedIssue("BOIAA-2");
+    try {
+      const lines: string[] = [];
+      vi.spyOn(console, "log").mockImplementation((line?: unknown) => { lines.push(String(line)); });
+      // each repo has one distinct completed issue (4 SP) — aggregating reads both
+      metricsCommand(repoA, { json: true, ledger: [repoA, repoB] });
+      const parsed = JSON.parse(lines.join("\n"));
+      expect(parsed.issues_completed).toBe(2);
+      expect(parsed.story_points_completed).toBe(8);
+    } finally {
+      rmSync(repoA, { recursive: true, force: true });
+      rmSync(repoB, { recursive: true, force: true });
     }
   });
 });
