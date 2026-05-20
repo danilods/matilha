@@ -26,4 +26,30 @@ describe("resolveJiraConfig", () => {
 
     expect(config.projectKey).toBe("OPS");
   });
+
+  it("uses default transition names when JIRA_TRANSITION_* env vars are absent", () => {
+    const config = resolveJiraConfig({
+      JIRA_BASE_URL: "https://example.atlassian.net",
+      JIRA_EMAIL: "dev@example.com",
+      JIRA_API_TOKEN: "token",
+      JIRA_PROJECT_KEY: "MAT"
+    });
+
+    expect(config.transitions.inProgress).toBe("In Progress");
+    expect(config.transitions.done).toBe("Done");
+  });
+
+  it("overrides transition names from JIRA_TRANSITION_IN_PROGRESS and JIRA_TRANSITION_DONE env vars", () => {
+    const config = resolveJiraConfig({
+      JIRA_BASE_URL: "https://example.atlassian.net",
+      JIRA_EMAIL: "dev@example.com",
+      JIRA_API_TOKEN: "token",
+      JIRA_PROJECT_KEY: "MAT",
+      JIRA_TRANSITION_IN_PROGRESS: "Em Andamento",
+      JIRA_TRANSITION_DONE: "Concluído"
+    });
+
+    expect(config.transitions.inProgress).toBe("Em Andamento");
+    expect(config.transitions.done).toBe("Concluído");
+  });
 });

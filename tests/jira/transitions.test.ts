@@ -49,4 +49,28 @@ describe("JiraClient.transitionIssue", () => {
     const client = new JiraClient(config);
     await expect(client.transitionIssue("BOIAA-1042", "Done")).rejects.toThrow(/transition "Done" not available/);
   });
+
+  it("matches transitions case-insensitively (lowercase caller arg vs mixed-case Jira name)", async () => {
+    const calls: Array<{ url: string; method: string; body?: string }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init: { method?: string; body?: string }) => {
+        calls.push({ url, method: init.method ?? "GET", body: init.body });
+        if ((init.method ?? "GET") === "GET") {
+          return new Response(
+            JSON.stringify({ transitions: [{ id: "31", name: "Done" }] }),
+            { status: 200 }
+          );
+        }
+        return new Response(null, { status: 204 });
+      })
+    );
+
+    const client = new JiraClient(config);
+    await client.transitionIssue("BOIAA-1042", "done");
+
+    expect(calls).toHaveLength(2);
+    expect(calls[1]!.method).toBe("POST");
+    expect(JSON.parse(calls[1]!.body!)).toEqual({ transition: { id: "31" } });
+  });
 });
