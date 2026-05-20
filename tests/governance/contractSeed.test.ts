@@ -45,10 +45,19 @@ describe("seedTaskCreatedEvents", () => {
       expect(events).toHaveLength(2);
       const first = events.find((e) => e.external_id === "BOIAA-1042")!;
       expect(first.type).toBe("task.created");
+      expect(first.issue_key).toBe("BOIAA-1042");
       if (first.type === "task.created") {
         expect(first.payload.story_points).toBe(3);
         expect(first.payload.category).toBe("frontend");
         expect(first.payload.issue_kind).toBe("foundation");
+      }
+
+      const second = events.find((e) => e.external_id === "BOIAA-1043")!;
+      expect(second.type).toBe("task.created");
+      if (second.type === "task.created") {
+        expect(second.payload.story_points).toBe(5);
+        expect(second.payload).not.toHaveProperty("category");
+        expect(second.payload).not.toHaveProperty("issue_kind");
       }
     } finally {
       rmSync(dir, { recursive: true, force: true });
