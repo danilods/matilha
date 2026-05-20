@@ -34,9 +34,11 @@ describe("matilha narrative command", () => {
   it("writes the narrative to a file with --output", () => {
     const dir = ledgerDir();
     try {
-      vi.spyOn(console, "log").mockImplementation(() => {});
+      const lines: string[] = [];
+      vi.spyOn(console, "log").mockImplementation((line?: unknown) => { lines.push(String(line)); });
       const out = join(dir, "narrativa.md");
       narrativeCommand(dir, { output: out });
+      expect(lines).toHaveLength(1);
       expect(existsSync(out)).toBe(true);
       expect(readFileSync(out, "utf-8")).toContain("Narrativa Executiva");
     } finally {

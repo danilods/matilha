@@ -388,7 +388,7 @@ program
   .action((opts: { output?: string }) => {
     try {
       narrativeCommand(process.cwd(), { output: opts.output });
-      renderWorkflowGuide();
+      if (!opts.output) renderWorkflowGuide();
     } catch (err) {
       handleCommandError(err, "running 'matilha narrative'");
     }
