@@ -68,4 +68,39 @@ describe("computeMetrics", () => {
     expect(resolveTraditionalHoursPerPoint({ TRADITIONAL_HOURS_PER_POINT: "6" })).toBe(6);
     expect(resolveTraditionalHoursPerPoint({ TRADITIONAL_HOURS_PER_POINT: "garbage" })).toBe(DEFAULT_TRADITIONAL_HOURS_PER_POINT);
   });
+
+  it("issues_total counts non-completed issues, issues_completed does not", () => {
+    const state = buildProjection([
+      ev("task.created", "BOIAA-1", "2026-05-19T10:00:00Z", { story_points: 3 }),
+      ev("task.started", "BOIAA-1", "2026-05-19T10:00:00Z"),
+      ev("task.completed", "BOIAA-1", "2026-05-19T10:30:00Z", { commits: ["a"] }),
+      ev("task.started", "BOIAA-2", "2026-05-19T11:00:00Z")
+    ]);
+    const metrics = computeMetrics(state, { baselineHoursPerPoint: 8, generatedAt: "2026-05-20T00:00:00Z" });
+    expect(metrics.issues_total).toBe(2);
+    expect(metrics.issues_completed).toBe(1);
+  });
+
+  it("single-day velocity uses span of 1, not 0", () => {
+    const state = buildProjection([
+      ev("task.created", "BOIAA-1", "2026-05-19T09:00:00Z", { story_points: 2 }),
+      ev("task.started", "BOIAA-1", "2026-05-19T09:00:00Z"),
+      ev("task.completed", "BOIAA-1", "2026-05-19T09:30:00Z", { commits: ["a"] }),
+      ev("task.created", "BOIAA-2", "2026-05-19T14:00:00Z", { story_points: 4 }),
+      ev("task.started", "BOIAA-2", "2026-05-19T14:00:00Z"),
+      ev("task.completed", "BOIAA-2", "2026-05-19T14:30:00Z", { commits: ["b"] })
+    ]);
+    const metrics = computeMetrics(state, { baselineHoursPerPoint: 8 });
+    expect(metrics.velocidade_sp_por_dia).toBe(6);
+  });
+
+  it("fator_compressao is null when counted worklog is zero", () => {
+    const state = buildProjection([
+      ev("task.created", "BOIAA-1", "2026-05-19T10:00:00Z", { story_points: 5 }),
+      ev("task.completed", "BOIAA-1", "2026-05-19T11:00:00Z", { commits: ["a"] })
+    ]);
+    const metrics = computeMetrics(state, { baselineHoursPerPoint: 8, generatedAt: "2026-05-20T00:00:00Z" });
+    expect(metrics.minutos_por_ponto).toBe(0);
+    expect(metrics.fator_compressao).toBeNull();
+  });
 });
