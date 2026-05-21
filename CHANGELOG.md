@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.7.0] — 2026-05-21 — Camada de governança issue-grained (Jira)
+
+Camada de governança event-sourced para desenvolvimento assistido por IA — rastro auditável de cada task: tempo ativo de agente, story point medido, modelo de IA. Construída como evolução aditiva (nada de 1.6.0 foi reescrito); o projeto Argos é o caso de prova. Spec: `argos/docs/superpowers/specs/2026-05-19-argos-governanca-jira-design.md`.
+
+### Added
+
+- **Livro-razão event-sourced** (`src/governance/`) — `events.ndjson` append-only é a fonte da verdade; `state.json` é projeção derivada e reconstruível. Eventos `task.created/started/paused/resumed/completed`, schema Zod, idempotência por `event_id`. `matilha governance rebuild` reconstrói a projeção do log.
+- **Time tracker** — `matilha task start/pause/resume/done`: marcadores de tempo que acrescentam eventos ao livro-razão; o worklog é o tempo ativo de agente, derivado dos intervalos.
+- **Git hooks** — `matilha jira hooks install` instala `commit-msg` (valida a chave `BOIAA-XXXX`) e `post-commit` (acrescenta `task.completed`). Locais, non-fatal, sem rede.
+- **Story point medido** — o story point deixa de ser estimativa e passa a ser calculado na conclusão a partir do tempo ativo: `trunc(min ÷ 60, 1 casa)`, piso `0,05` (`1 SP = 1 h`, configurável via `MINUTES_PER_STORY_POINT`). `src/governance/storyPoints.ts`.
+- **Showcase** — `matilha metrics` (números finais: tempo ativo total, story points, tasks concluídas, duração de calendário, detalhe por task) e `matilha narrative` (narrativa executiva em markdown). Ambos derivados só do livro-razão; agregam múltiplos repos via `--ledger`.
+- **`matilha governance import-contract`** — semeia eventos `task.created` a partir de um contrato `tasks.json`.
+- **`matilha governance sync`** — projeta o livro-razão para o Jira: transição de status, story points, worklog e comentário de conclusão; rastro de sincronização em `sync-state.json` (à parte da projeção); idempotente; `--preview`/`--yes`. Coexiste com o `jira sync` legado, sem substituí-lo.
+- **`transitionIssue`** em `src/jira/jiraClient.ts` — resolve nome de transição → id e aplica.
+
+> Nota: as entradas [1.3.0]–[1.6.0] não foram registradas neste arquivo (waves internas de desenvolvimento). A 1.7.0 retoma o changelog.
+
 ## [1.2.2] — 2026-04-24 — Novo sigil: ASCII art do lobo com wordmark MATILHA
 
 ### Changed
