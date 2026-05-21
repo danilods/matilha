@@ -8,7 +8,9 @@ export const SYNC_STATE_VERSION = 1;
 const syncedIssueSchema = z.object({
   synced_event_id: z.string().min(1),
   synced_at: z.string().min(1),
-  synced_status: z.enum(["created", "in_progress", "paused", "completed"])
+  synced_status: z.enum(["created", "in_progress", "paused", "completed"]),
+  synced_worklog_minutes: z.number().nonnegative().default(0),
+  synced_commits: z.array(z.string().min(1)).default([])
 });
 
 export const syncStateSchema = z.object({

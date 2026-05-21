@@ -27,7 +27,13 @@ describe("syncState", () => {
       const state: SyncState = {
         schema_version: SYNC_STATE_VERSION,
         issues: {
-          "BOIAA-1": { synced_event_id: "e9", synced_at: "2026-05-21T10:00:00Z", synced_status: "completed" }
+          "BOIAA-1": {
+            synced_event_id: "e9",
+            synced_at: "2026-05-21T10:00:00Z",
+            synced_status: "completed",
+            synced_worklog_minutes: 0,
+            synced_commits: []
+          }
         }
       };
       writeSyncState(dir, state);
@@ -67,13 +73,60 @@ describe("syncState", () => {
     const after = markIssueSynced(before, "BOIAA-7", {
       synced_event_id: "e1",
       synced_at: "2026-05-21T11:00:00Z",
-      synced_status: "in_progress"
+      synced_status: "in_progress",
+      synced_worklog_minutes: 0,
+      synced_commits: []
     });
     expect(before.issues).toEqual({});
     expect(after.issues["BOIAA-7"]).toEqual({
       synced_event_id: "e1",
       synced_at: "2026-05-21T11:00:00Z",
-      synced_status: "in_progress"
+      synced_status: "in_progress",
+      synced_worklog_minutes: 0,
+      synced_commits: []
     });
+  });
+
+  it("round-trips synced_worklog_minutes and synced_commits", () => {
+    const dir = mkdtempSync(join(tmpdir(), "matilha-syncstate-"));
+    try {
+      const state: SyncState = {
+        schema_version: SYNC_STATE_VERSION,
+        issues: {
+          "BOIAA-1": {
+            synced_event_id: "e9",
+            synced_at: "2026-05-21T10:00:00Z",
+            synced_status: "in_progress",
+            synced_worklog_minutes: 42,
+            synced_commits: ["c1", "c2"]
+          }
+        }
+      };
+      writeSyncState(dir, state);
+      expect(readSyncState(dir)).toEqual(state);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("defaults synced_worklog_minutes and synced_commits for a legacy entry without them", () => {
+    const dir = mkdtempSync(join(tmpdir(), "matilha-syncstate-"));
+    try {
+      const path = syncStatePath(dir);
+      mkdirSync(dirname(path), { recursive: true });
+      writeFileSync(
+        path,
+        JSON.stringify({
+          schema_version: SYNC_STATE_VERSION,
+          issues: { "BOIAA-1": { synced_event_id: "e1", synced_at: "x", synced_status: "completed" } }
+        }),
+        "utf-8"
+      );
+      const issue = readSyncState(dir).issues["BOIAA-1"]!;
+      expect(issue.synced_worklog_minutes).toBe(0);
+      expect(issue.synced_commits).toEqual([]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
