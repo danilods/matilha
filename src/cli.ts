@@ -15,6 +15,7 @@ import { huntCommand } from "./hunt/huntCommand";
 import { gatherCommand } from "./gather/gatherCommand";
 import { governanceRebuildCommand } from "./governance/rebuildCommand";
 import { importContractCommand } from "./governance/contractSeed";
+import { governanceSyncCommand } from "./governance/syncCommand";
 import { metricsCommand } from "./governance/metricsCommand";
 import { narrativeCommand } from "./governance/narrativeCommand";
 import { taskCommand } from "./governance/taskCommand";
@@ -365,6 +366,20 @@ governance
       renderWorkflowGuide();
     } catch (err) {
       handleCommandError(err, "running 'matilha governance import-contract'");
+    }
+  });
+
+governance
+  .command("sync")
+  .description("Project the governance ledger to Jira (status, worklog, story points, comment)")
+  .option("--preview", "show the mutation plan without touching Jira", false)
+  .option("--yes", "apply the plan to Jira", false)
+  .action(async (opts: { preview: boolean; yes: boolean }) => {
+    try {
+      await governanceSyncCommand(process.cwd(), { preview: opts.preview, yes: opts.yes });
+      renderWorkflowGuide();
+    } catch (err) {
+      handleCommandError(err, "running 'matilha governance sync'");
     }
   });
 
