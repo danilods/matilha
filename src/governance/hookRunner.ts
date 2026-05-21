@@ -33,9 +33,10 @@ export type PostCommitResult = {
 };
 
 /**
- * Reads the HEAD commit and emits a task.completed governance event per issue
- * key found in its message. Precondition: the repo has at least one commit —
- * always true when invoked from the installed post-commit hook.
+ * Reads the HEAD commit and emits a task.progress governance event per issue
+ * key found in its message — a commit is progress, not completion (completion
+ * is the explicit `matilha task done`). Precondition: the repo has at least
+ * one commit — always true when invoked from the installed post-commit hook.
  */
 export async function runPostCommit(
   cwd: string,
@@ -50,7 +51,7 @@ export async function runPostCommit(
 
   for (const key of keys) {
     const event = makeGovernanceEvent({
-      type: "task.completed",
+      type: "task.progress",
       external_id: key,
       issue_key: looksLikeIssueKey(key) ? key : null,
       actor,

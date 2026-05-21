@@ -81,7 +81,7 @@ describe("runPostCommit", () => {
     run(["commit", "-q", "-m", message]);
   }
 
-  it("emits a task.completed event for the issue key in the HEAD commit", async () => {
+  it("emits a task.progress event for the issue key in the HEAD commit", async () => {
     const dir = gitRepo();
     try {
       commit(dir, "feat: cascata camada 2  BOIAA-1042");
@@ -92,10 +92,10 @@ describe("runPostCommit", () => {
       const events = readLedger(dir);
       expect(events).toHaveLength(1);
       const event = events[0]!;
-      expect(event.type).toBe("task.completed");
+      expect(event.type).toBe("task.progress");
       expect(event.external_id).toBe("BOIAA-1042");
       expect(event.issue_key).toBe("BOIAA-1042");
-      if (event.type === "task.completed") {
+      if (event.type === "task.progress") {
         expect(event.payload.commits).toEqual([result.sha]);
       }
     } finally {
