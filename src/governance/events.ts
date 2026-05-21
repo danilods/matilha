@@ -54,6 +54,17 @@ const taskPausedSchema = z.object({
   payload: z.object({ reason: z.string().min(1).optional() }).default({})
 });
 
+const taskProgressSchema = z.object({
+  ...baseFields,
+  type: z.literal("task.progress"),
+  payload: z
+    .object({
+      commits: z.array(z.string().min(1)).default([]),
+      summary_markdown: z.string().min(1).optional()
+    })
+    .default({})
+});
+
 const taskCompletedSchema = z.object({
   ...baseFields,
   type: z.literal("task.completed"),
@@ -70,6 +81,7 @@ export const governanceEventSchema = z.discriminatedUnion("type", [
   taskStartedSchema,
   taskResumedSchema,
   taskPausedSchema,
+  taskProgressSchema,
   taskCompletedSchema
 ]);
 

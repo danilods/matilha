@@ -64,6 +64,23 @@ describe("governance events", () => {
     expect(looksLikeIssueKey("feat-auth-SP1")).toBe(false);
   });
 
+  it("accepts a task.progress event with a commits payload", () => {
+    const event = parseGovernanceEvent({
+      schema_version: 1,
+      event_id: "p1",
+      type: "task.progress",
+      external_id: "BOIAA-1",
+      issue_key: "BOIAA-1",
+      timestamp: "2026-05-21T10:00:00Z",
+      actor: { tool: "cli" },
+      payload: { commits: ["abc1234"], summary_markdown: "feat: x" }
+    });
+    expect(event.type).toBe("task.progress");
+    if (event.type === "task.progress") {
+      expect(event.payload.commits).toEqual(["abc1234"]);
+    }
+  });
+
   it("drops story_points from a task.created payload (SP is measured at completion)", () => {
     const event = parseGovernanceEvent({
       schema_version: 1,

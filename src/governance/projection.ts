@@ -22,6 +22,7 @@ const issueStateSchema = z.object({
     .nullable(),
   category: z.string().min(1).nullable(),
   issue_kind: z.string().min(1).nullable(),
+  pause_reason: z.string().min(1).nullable().default(null),
   last_event_id: z.string().min(1),
   last_event_at: z.string().min(1)
 });
@@ -60,6 +61,7 @@ function projectIssue(sorted: GovernanceEvent[], minutesPerStoryPoint: number): 
   let status: IssueState["status"] = "created";
   let category: string | null = null;
   let issueKind: string | null = null;
+  let pauseReason: string | null = null;
   let jiraKey: string | null = null;
   let agent: IssueState["agent"] = null;
   const intervals: Array<{ start: string; end: string }> = [];
@@ -78,12 +80,19 @@ function projectIssue(sorted: GovernanceEvent[], minutesPerStoryPoint: number): 
       sawStart = true;
       if (openStart === null) openStart = event.timestamp;
       status = "in_progress";
+      pauseReason = null;
     } else if (event.type === "task.paused") {
       if (openStart !== null) {
         intervals.push({ start: openStart, end: event.timestamp });
         openStart = null;
       }
       status = "paused";
+      pauseReason = event.payload.reason ?? null;
+    } else if (event.type === "task.progress") {
+      for (const commit of event.payload.commits) {
+        commitSet.add(commit);
+      }
+      if (status === "created") status = "in_progress";
     } else if (event.type === "task.completed") {
       if (openStart !== null) {
         intervals.push({ start: openStart, end: event.timestamp });
@@ -93,6 +102,7 @@ function projectIssue(sorted: GovernanceEvent[], minutesPerStoryPoint: number): 
         commitSet.add(commit);
       }
       status = "completed";
+      pauseReason = null;
     }
   }
 
@@ -120,6 +130,7 @@ function projectIssue(sorted: GovernanceEvent[], minutesPerStoryPoint: number): 
     agent,
     category,
     issue_kind: issueKind,
+    pause_reason: pauseReason,
     last_event_id: last.event_id,
     last_event_at: last.timestamp
   };

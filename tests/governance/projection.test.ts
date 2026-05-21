@@ -132,6 +132,73 @@ describe("governance projection", () => {
     expect(issue.worklog_estimated).toBe(false);
   });
 
+  it("task.progress accumulates commits and moves a created task to in_progress, without worklog", () => {
+    const issue = buildProjection([
+      ev("task.created", "BOIAA-20", "2026-05-21T09:00:00Z"),
+      ev("task.progress", "BOIAA-20", "2026-05-21T09:30:00Z", { commits: ["c1"] }),
+      ev("task.progress", "BOIAA-20", "2026-05-21T10:00:00Z", { commits: ["c2"] })
+    ]).issues["BOIAA-20"]!;
+    expect(issue.status).toBe("in_progress");
+    expect(issue.commits).toEqual(["c1", "c2"]);
+    expect(issue.worklog_active_minutes).toBe(0);
+    expect(issue.story_points).toBeNull();
+  });
+
+  it("task.progress does not complete a task — only task.completed does", () => {
+    const issue = buildProjection([
+      ev("task.started", "BOIAA-21", "2026-05-21T09:00:00Z"),
+      ev("task.progress", "BOIAA-21", "2026-05-21T09:30:00Z", { commits: ["c1"] })
+    ]).issues["BOIAA-21"]!;
+    expect(issue.status).toBe("in_progress");
+  });
+
+  it("task.progress does not un-pause a paused task", () => {
+    const issue = buildProjection([
+      ev("task.started", "BOIAA-24", "2026-05-21T09:00:00Z"),
+      ev("task.paused", "BOIAA-24", "2026-05-21T09:30:00Z", { reason: "pausa" }),
+      ev("task.progress", "BOIAA-24", "2026-05-21T09:40:00Z", { commits: ["c1"] })
+    ]).issues["BOIAA-24"]!;
+    expect(issue.status).toBe("paused");
+    expect(issue.pause_reason).toBe("pausa");
+  });
+
+  it("task.progress after completion does not reopen the task", () => {
+    const issue = buildProjection([
+      ev("task.started", "BOIAA-25", "2026-05-21T09:00:00Z"),
+      ev("task.completed", "BOIAA-25", "2026-05-21T09:30:00Z", { commits: ["c1"] }),
+      ev("task.progress", "BOIAA-25", "2026-05-21T09:40:00Z", { commits: ["c2"] })
+    ]).issues["BOIAA-25"]!;
+    expect(issue.status).toBe("completed");
+  });
+
+  it("clears pause_reason on completion", () => {
+    const issue = buildProjection([
+      ev("task.started", "BOIAA-26", "2026-05-21T09:00:00Z"),
+      ev("task.paused", "BOIAA-26", "2026-05-21T09:30:00Z", { reason: "pausa" }),
+      ev("task.resumed", "BOIAA-26", "2026-05-21T10:00:00Z"),
+      ev("task.completed", "BOIAA-26", "2026-05-21T10:20:00Z", { commits: ["c1"] })
+    ]).issues["BOIAA-26"]!;
+    expect(issue.status).toBe("completed");
+    expect(issue.pause_reason).toBeNull();
+  });
+
+  it("captures the pause reason while paused and clears it on resume", () => {
+    const paused = buildProjection([
+      ev("task.started", "BOIAA-22", "2026-05-21T09:00:00Z"),
+      ev("task.paused", "BOIAA-22", "2026-05-21T09:30:00Z", { reason: "fim do expediente" })
+    ]).issues["BOIAA-22"]!;
+    expect(paused.status).toBe("paused");
+    expect(paused.pause_reason).toBe("fim do expediente");
+
+    const resumed = buildProjection([
+      ev("task.started", "BOIAA-23", "2026-05-21T09:00:00Z"),
+      ev("task.paused", "BOIAA-23", "2026-05-21T09:30:00Z", { reason: "almoço" }),
+      ev("task.resumed", "BOIAA-23", "2026-05-21T10:30:00Z")
+    ]).issues["BOIAA-23"]!;
+    expect(resumed.status).toBe("in_progress");
+    expect(resumed.pause_reason).toBeNull();
+  });
+
   it("deduplicates commits across multiple task.completed events preserving first-appearance order", () => {
     const issue = buildProjection([
       ev("task.started", "BOIAA-8", "2026-05-19T14:00:00Z"),
