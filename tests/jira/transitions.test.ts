@@ -73,4 +73,46 @@ describe("JiraClient.transitionIssue", () => {
     expect(calls[1]!.method).toBe("POST");
     expect(JSON.parse(calls[1]!.body!)).toEqual({ transition: { id: "31" } });
   });
+
+  it("posts a comment inside the transition when opts.comment is given", async () => {
+    const calls: Array<{ url: string; method: string; body?: string }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init: { method?: string; body?: string }) => {
+        calls.push({ url, method: init.method ?? "GET", body: init.body });
+        if ((init.method ?? "GET") === "GET") {
+          return new Response(JSON.stringify({ transitions: [{ id: "61", name: "Paused" }] }), { status: 200 });
+        }
+        return new Response(null, { status: 204 });
+      })
+    );
+
+    const client = new JiraClient(config);
+    await client.transitionIssue("BOIAA-1042", "Paused", { comment: { type: "doc", version: 1, content: [] } });
+
+    const post = JSON.parse(calls[1]!.body!);
+    expect(post.transition).toEqual({ id: "61" });
+    expect(post.update.comment).toEqual([{ add: { body: { type: "doc", version: 1, content: [] } } }]);
+  });
+
+  it("posts fields inside the transition when opts.fields is given", async () => {
+    const calls: Array<{ url: string; method: string; body?: string }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init: { method?: string; body?: string }) => {
+        calls.push({ url, method: init.method ?? "GET", body: init.body });
+        if ((init.method ?? "GET") === "GET") {
+          return new Response(JSON.stringify({ transitions: [{ id: "31", name: "Concluído" }] }), { status: 200 });
+        }
+        return new Response(null, { status: 204 });
+      })
+    );
+
+    const client = new JiraClient(config);
+    await client.transitionIssue("BOIAA-1042", "Concluído", { fields: { customfield_10016: 3 } });
+
+    const post = JSON.parse(calls[1]!.body!);
+    expect(post.transition).toEqual({ id: "31" });
+    expect(post.fields).toEqual({ customfield_10016: 3 });
+  });
 });

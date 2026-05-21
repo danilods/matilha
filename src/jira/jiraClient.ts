@@ -47,7 +47,11 @@ export class JiraClient {
     return result.transitions ?? [];
   }
 
-  async transitionIssue(issueKey: string, transitionName: string): Promise<void> {
+  async transitionIssue(
+    issueKey: string,
+    transitionName: string,
+    opts: { comment?: unknown; fields?: Record<string, unknown> } = {}
+  ): Promise<void> {
     const transitions = await this.getTransitions(issueKey);
     const match = transitions.find(
       (t) => t.name.toLowerCase() === transitionName.toLowerCase()
@@ -59,13 +63,18 @@ export class JiraClient {
         problem: `available transitions: ${transitions.map((t) => t.name).join(", ") || "none"}`,
         nextActions: [
           "confirm the Jira workflow allows this transition from the issue's current status",
-          "set JIRA_TRANSITION_IN_PROGRESS / JIRA_TRANSITION_DONE to match your Jira workflow"
+          "set JIRA_TRANSITION_IN_PROGRESS / JIRA_TRANSITION_PAUSED / JIRA_TRANSITION_DONE to match your Jira workflow"
         ]
       });
     }
+    const body: Record<string, unknown> = { transition: { id: match.id } };
+    if (opts.fields !== undefined) body.fields = opts.fields;
+    if (opts.comment != null) {
+      body.update = { comment: [{ add: { body: opts.comment } }] };
+    }
     await this.request(`/rest/api/3/issue/${encodeURIComponent(issueKey)}/transitions`, {
       method: "POST",
-      body: JSON.stringify({ transition: { id: match.id } })
+      body: JSON.stringify(body)
     });
   }
 
