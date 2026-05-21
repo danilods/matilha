@@ -29,6 +29,19 @@ function stubJiraEnv(): void {
   vi.stubEnv("JIRA_PROJECT_KEY", "BOIAA");
 }
 
+function jiraFetchMock(calls: Array<{ url: string; method: string; body?: string }>) {
+  return vi.fn(async (url: string, init: { method?: string; body?: string }) => {
+    calls.push({ url, method: init.method ?? "GET", body: init.body });
+    if (url.endsWith("/transitions") && (init.method ?? "GET") === "GET") {
+      return new Response(
+        JSON.stringify({ transitions: [{ id: "11", name: "Em andamento" }, { id: "31", name: "Concluído" }] }),
+        { status: 200 }
+      );
+    }
+    return new Response("{}", { status: 200 });
+  });
+}
+
 describe("governanceSyncCommand", () => {
   it("refuses to run without --preview or --yes", async () => {
     const dir = ledgerWithCompletedIssue();
@@ -39,7 +52,7 @@ describe("governanceSyncCommand", () => {
     }
   });
 
-  it("--preview prints the plan and does NOT touch Jira or sync-state.json", async () => {
+  it("--preview prints the plan and touches neither Jira nor sync-state.json", async () => {
     const dir = ledgerWithCompletedIssue();
     try {
       const fetchMock = vi.fn();
@@ -55,25 +68,59 @@ describe("governanceSyncCommand", () => {
     }
   });
 
-  it("--yes projects the issue to Jira and records the sync trail", async () => {
+  it("--yes sets story points BEFORE transitioning to the done status", async () => {
     const dir = ledgerWithCompletedIssue();
     try {
       stubJiraEnv();
-      const calls: Array<{ url: string; method: string }> = [];
-      vi.stubGlobal("fetch", vi.fn(async (url: string, init: { method?: string }) => {
-        calls.push({ url, method: init.method ?? "GET" });
-        if (url.endsWith("/transitions") && (init.method ?? "GET") === "GET") {
-          return new Response(JSON.stringify({ transitions: [{ id: "11", name: "In Progress" }, { id: "31", name: "Done" }] }), { status: 200 });
-        }
-        return new Response("{}", { status: 200 });
-      }));
+      vi.stubEnv("JIRA_TRANSITION_DONE", "Concluído");
+      const calls: Array<{ url: string; method: string; body?: string }> = [];
+      vi.stubGlobal("fetch", jiraFetchMock(calls));
       vi.spyOn(console, "log").mockImplementation(() => {});
       await governanceSyncCommand(dir, { yes: true });
 
-      expect(calls.some((c) => c.url.endsWith("/worklog"))).toBe(true);
-      expect(calls.some((c) => c.url.endsWith("/comment"))).toBe(true);
-      const trail = readSyncState(dir);
-      expect(trail.issues["BOIAA-1"]!.synced_status).toBe("completed");
+      const fieldUpdate = calls.findIndex((c) => c.method === "PUT" && /\/issue\/BOIAA-1$/.test(c.url));
+      const transitionPost = calls.findIndex((c) => c.method === "POST" && c.url.endsWith("/transitions"));
+      expect(fieldUpdate).toBeGreaterThanOrEqual(0);
+      expect(transitionPost).toBeGreaterThanOrEqual(0);
+      expect(fieldUpdate).toBeLessThan(transitionPost);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("--yes records synced worklog and commits in the sync trail", async () => {
+    const dir = ledgerWithCompletedIssue();
+    try {
+      stubJiraEnv();
+      const calls: Array<{ url: string; method: string; body?: string }> = [];
+      vi.stubGlobal("fetch", jiraFetchMock(calls));
+      vi.spyOn(console, "log").mockImplementation(() => {});
+      await governanceSyncCommand(dir, { yes: true });
+
+      const trail = readSyncState(dir).issues["BOIAA-1"]!;
+      expect(trail.synced_status).toBe("completed");
+      expect(trail.synced_worklog_minutes).toBe(40);
+      expect(trail.synced_commits).toEqual(["c1"]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("--yes posts a progress comment listing the new commits on an in-progress sync", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "matilha-synccmd-prog-"));
+    try {
+      stubJiraEnv();
+      appendEvent(dir, makeGovernanceEvent({ type: "task.started", external_id: "BOIAA-1", issue_key: "BOIAA-1", actor, timestamp: "2026-05-21T10:00:00Z" }));
+      appendEvent(dir, makeGovernanceEvent({ type: "task.progress", external_id: "BOIAA-1", issue_key: "BOIAA-1", actor, timestamp: "2026-05-21T10:10:00Z", payload: { commits: ["abc1234"] } }));
+      const calls: Array<{ url: string; method: string; body?: string }> = [];
+      vi.stubGlobal("fetch", jiraFetchMock(calls));
+      vi.spyOn(console, "log").mockImplementation(() => {});
+      await governanceSyncCommand(dir, { yes: true });
+
+      const commentPost = calls.find((c) => c.method === "POST" && c.url.endsWith("/comment"));
+      expect(commentPost).toBeDefined();
+      expect(commentPost!.body).toContain("Progresso");
+      expect(commentPost!.body).toContain("abc1234");
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -83,12 +130,7 @@ describe("governanceSyncCommand", () => {
     const dir = ledgerWithCompletedIssue();
     try {
       stubJiraEnv();
-      vi.stubGlobal("fetch", vi.fn(async (url: string, init: { method?: string }) => {
-        if (url.endsWith("/transitions") && (init.method ?? "GET") === "GET") {
-          return new Response(JSON.stringify({ transitions: [{ id: "11", name: "In Progress" }, { id: "31", name: "Done" }] }), { status: 200 });
-        }
-        return new Response("{}", { status: 200 });
-      }));
+      vi.stubGlobal("fetch", jiraFetchMock([]));
       vi.spyOn(console, "log").mockImplementation(() => {});
       await governanceSyncCommand(dir, { yes: true });
 
@@ -101,22 +143,27 @@ describe("governanceSyncCommand", () => {
     }
   });
 
-  it("--yes skips a transition the Jira workflow does not offer, without aborting", async () => {
-    const dir = ledgerWithCompletedIssue();
+  it("--yes projects only the worklog delta on an incremental sync", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "matilha-synccmd-inc-"));
     try {
       stubJiraEnv();
-      const calls: string[] = [];
-      vi.stubGlobal("fetch", vi.fn(async (url: string, init: { method?: string }) => {
-        calls.push(`${init.method ?? "GET"} ${url}`);
-        if (url.endsWith("/transitions") && (init.method ?? "GET") === "GET") {
-          return new Response(JSON.stringify({ transitions: [] }), { status: 200 });
-        }
-        return new Response("{}", { status: 200 });
-      }));
+      appendEvent(dir, makeGovernanceEvent({ type: "task.started", external_id: "BOIAA-1", issue_key: "BOIAA-1", actor, timestamp: "2026-05-21T10:00:00Z" }));
+      appendEvent(dir, makeGovernanceEvent({ type: "task.paused", external_id: "BOIAA-1", issue_key: "BOIAA-1", actor, timestamp: "2026-05-21T10:40:00Z", payload: { reason: "pausa" } }));
+      vi.stubGlobal("fetch", jiraFetchMock([]));
       vi.spyOn(console, "log").mockImplementation(() => {});
-      await expect(governanceSyncCommand(dir, { yes: true })).resolves.not.toThrow();
-      expect(calls.some((c) => c.endsWith("/worklog"))).toBe(true);
-      expect(readSyncState(dir).issues["BOIAA-1"]!.synced_status).toBe("completed");
+      await governanceSyncCommand(dir, { yes: true });
+      expect(readSyncState(dir).issues["BOIAA-1"]!.synced_worklog_minutes).toBe(40);
+
+      appendEvent(dir, makeGovernanceEvent({ type: "task.resumed", external_id: "BOIAA-1", issue_key: "BOIAA-1", actor, timestamp: "2026-05-21T14:00:00Z" }));
+      appendEvent(dir, makeGovernanceEvent({ type: "task.paused", external_id: "BOIAA-1", issue_key: "BOIAA-1", actor, timestamp: "2026-05-21T14:20:00Z", payload: { reason: "pausa" } }));
+      const calls: Array<{ url: string; method: string; body?: string }> = [];
+      vi.stubGlobal("fetch", jiraFetchMock(calls));
+      await governanceSyncCommand(dir, { yes: true });
+
+      const worklogPost = calls.find((c) => c.method === "POST" && c.url.endsWith("/worklog"));
+      expect(worklogPost).toBeDefined();
+      expect(JSON.parse(worklogPost!.body!).timeSpentSeconds).toBe(20 * 60);
+      expect(readSyncState(dir).issues["BOIAA-1"]!.synced_worklog_minutes).toBe(60);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

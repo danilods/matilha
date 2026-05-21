@@ -5,7 +5,10 @@ import { computeSyncPlan, resolveTransitionConfig } from "../../src/governance/s
 import { SYNC_STATE_VERSION, type SyncState } from "../../src/governance/syncState";
 
 const actor = { tool: "cli" };
-const config = { storyPointsField: "customfield_10016", transitions: { inProgress: "In Progress", done: "Done" } };
+const config = {
+  storyPointsField: "customfield_10016",
+  transitions: { inProgress: "Em andamento", paused: "Paused", done: "Concluído" }
+};
 
 function ev(
   type: GovernanceEventType,
@@ -20,23 +23,20 @@ function ev(
 const emptySync: SyncState = { schema_version: SYNC_STATE_VERSION, issues: {} };
 
 describe("resolveTransitionConfig", () => {
-  it("defaults the field and transition names", () => {
+  it("defaults the field and the three transition names", () => {
     expect(resolveTransitionConfig({})).toEqual({
       storyPointsField: "customfield_10016",
-      transitions: { inProgress: "In Progress", done: "Done" }
+      transitions: { inProgress: "In Progress", paused: "Paused", done: "Done" }
     });
   });
-  it("reads overrides from the environment", () => {
+  it("reads the real workflow names from the environment", () => {
     expect(
       resolveTransitionConfig({
-        JIRA_STORY_POINTS_FIELD: "customfield_99",
-        JIRA_TRANSITION_IN_PROGRESS: "Doing",
-        JIRA_TRANSITION_DONE: "Shipped"
-      })
-    ).toEqual({
-      storyPointsField: "customfield_99",
-      transitions: { inProgress: "Doing", done: "Shipped" }
-    });
+        JIRA_TRANSITION_IN_PROGRESS: "Em andamento",
+        JIRA_TRANSITION_PAUSED: "Paused",
+        JIRA_TRANSITION_DONE: "Concluído"
+      }).transitions
+    ).toEqual({ inProgress: "Em andamento", paused: "Paused", done: "Concluído" });
   });
 });
 
@@ -50,67 +50,72 @@ describe("computeSyncPlan", () => {
 
   it("plans the In Progress transition for a freshly started issue", () => {
     const state = buildProjection([ev("task.started", "BOIAA-1", "2026-05-21T10:00:00Z", "BOIAA-1")]);
-    const plan = computeSyncPlan(state, emptySync, config);
-    expect(plan.actions).toHaveLength(1);
-    const a = plan.actions[0]!;
-    expect(a.jira_key).toBe("BOIAA-1");
-    expect(a.transitions).toEqual(["In Progress"]);
+    const a = computeSyncPlan(state, emptySync, config).actions[0]!;
+    expect(a.transition).toEqual({ name: "Em andamento", comment: null });
     expect(a.set_story_points).toBeNull();
-    expect(a.log_worklog_minutes).toBeNull();
-    expect(a.comment).toBe(false);
+    expect(a.log_worklog_minutes).toBe(0);
   });
 
-  it("plans status+SP+worklog+comment when an issue completes (no prior sync)", () => {
+  it("plans the Paused transition carrying the pause reason as its comment", () => {
     const state = buildProjection([
       ev("task.started", "BOIAA-2", "2026-05-21T10:00:00Z", "BOIAA-2"),
-      ev("task.completed", "BOIAA-2", "2026-05-21T10:40:00Z", "BOIAA-2", { commits: ["c1"] })
+      ev("task.paused", "BOIAA-2", "2026-05-21T10:20:00Z", "BOIAA-2", { reason: "fim do expediente" })
     ]);
-    const plan = computeSyncPlan(state, emptySync, config);
-    const a = plan.actions[0]!;
-    expect(a.transitions).toEqual(["In Progress", "Done"]);
-    expect(a.set_story_points).toBe(0.6); // 40 min ÷ 60
-    expect(a.log_worklog_minutes).toBe(40);
-    expect(a.comment).toBe(true);
-  });
-
-  it("plans only the Done transition when the issue was already synced In Progress", () => {
-    const state = buildProjection([
-      ev("task.started", "BOIAA-3", "2026-05-21T10:00:00Z", "BOIAA-3"),
-      ev("task.completed", "BOIAA-3", "2026-05-21T10:30:00Z", "BOIAA-3", { commits: ["c"] })
-    ]);
-    const issue = state.issues["BOIAA-3"]!;
     const synced: SyncState = {
       schema_version: SYNC_STATE_VERSION,
-      issues: { "BOIAA-3": { synced_event_id: "stale", synced_at: "2026-05-21T10:05:00Z", synced_status: "in_progress" } }
+      issues: { "BOIAA-2": { synced_event_id: "stale", synced_at: "x", synced_status: "in_progress", synced_worklog_minutes: 0, synced_commits: [] } }
     };
-    const plan = computeSyncPlan(state, synced, config);
-    const a = plan.actions[0]!;
-    expect(a.transitions).toEqual(["Done"]);
-    expect(a.set_story_points).toBe(issue.story_points);
+    const a = computeSyncPlan(state, synced, config).actions[0]!;
+    expect(a.transition).toEqual({ name: "Paused", comment: "fim do expediente" });
+    expect(a.log_worklog_minutes).toBe(20);
+  });
+
+  it("projects only the worklog delta since the last sync", () => {
+    const state = buildProjection([
+      ev("task.started", "BOIAA-3", "2026-05-21T10:00:00Z", "BOIAA-3"),
+      ev("task.paused", "BOIAA-3", "2026-05-21T11:00:00Z", "BOIAA-3", { reason: "pausa" })
+    ]);
+    const synced: SyncState = {
+      schema_version: SYNC_STATE_VERSION,
+      issues: { "BOIAA-3": { synced_event_id: "stale", synced_at: "x", synced_status: "in_progress", synced_worklog_minutes: 25, synced_commits: [] } }
+    };
+    const a = computeSyncPlan(state, synced, config).actions[0]!;
+    expect(a.log_worklog_minutes).toBe(35);
+    expect(a.worklog_total_minutes).toBe(60);
+  });
+
+  it("lists only the commits new since the last sync, for the progress comment", () => {
+    const state = buildProjection([
+      ev("task.started", "BOIAA-4", "2026-05-21T10:00:00Z", "BOIAA-4"),
+      ev("task.progress", "BOIAA-4", "2026-05-21T10:10:00Z", "BOIAA-4", { commits: ["c1"] }),
+      ev("task.progress", "BOIAA-4", "2026-05-21T10:20:00Z", "BOIAA-4", { commits: ["c2"] })
+    ]);
+    const synced: SyncState = {
+      schema_version: SYNC_STATE_VERSION,
+      issues: { "BOIAA-4": { synced_event_id: "stale", synced_at: "x", synced_status: "in_progress", synced_worklog_minutes: 0, synced_commits: ["c1"] } }
+    };
+    const a = computeSyncPlan(state, synced, config).actions[0]!;
+    expect(a.new_commits).toEqual(["c2"]);
+    expect(a.all_commits).toEqual(["c1", "c2"]);
+  });
+
+  it("sets story points on completion and marks the action as a comment", () => {
+    const state = buildProjection([
+      ev("task.started", "BOIAA-5", "2026-05-21T10:00:00Z", "BOIAA-5"),
+      ev("task.completed", "BOIAA-5", "2026-05-21T10:40:00Z", "BOIAA-5", { commits: ["c1"] })
+    ]);
+    const a = computeSyncPlan(state, emptySync, config).actions[0]!;
+    expect(a.transition).toEqual({ name: "Concluído", comment: null });
+    expect(a.set_story_points).toBe(0.6);
     expect(a.comment).toBe(true);
   });
 
   it("skips an issue whose last_event_id already matches the sync trail", () => {
-    const state = buildProjection([ev("task.started", "BOIAA-4", "2026-05-21T10:00:00Z", "BOIAA-4")]);
-    const issue = state.issues["BOIAA-4"]!;
+    const state = buildProjection([ev("task.started", "BOIAA-6", "2026-05-21T10:00:00Z", "BOIAA-6")]);
+    const issue = state.issues["BOIAA-6"]!;
     const synced: SyncState = {
       schema_version: SYNC_STATE_VERSION,
-      issues: { "BOIAA-4": { synced_event_id: issue.last_event_id, synced_at: "x", synced_status: "in_progress" } }
-    };
-    const plan = computeSyncPlan(state, synced, config);
-    expect(plan.actions).toEqual([]);
-    expect(plan.skipped).toBe(1);
-  });
-
-  it("skips a completed issue already synced as completed even if a later event arrived", () => {
-    const state = buildProjection([
-      ev("task.started", "BOIAA-5", "2026-05-21T10:00:00Z", "BOIAA-5"),
-      ev("task.completed", "BOIAA-5", "2026-05-21T10:20:00Z", "BOIAA-5", { commits: ["c1"] }),
-      ev("task.completed", "BOIAA-5", "2026-05-21T10:25:00Z", "BOIAA-5", { commits: ["c2"] })
-    ]);
-    const synced: SyncState = {
-      schema_version: SYNC_STATE_VERSION,
-      issues: { "BOIAA-5": { synced_event_id: "older", synced_at: "x", synced_status: "completed" } }
+      issues: { "BOIAA-6": { synced_event_id: issue.last_event_id, synced_at: "x", synced_status: "in_progress", synced_worklog_minutes: 0, synced_commits: [] } }
     };
     const plan = computeSyncPlan(state, synced, config);
     expect(plan.actions).toEqual([]);

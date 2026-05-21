@@ -3,12 +3,12 @@ import type { SyncState } from "./syncState";
 
 export type TransitionConfig = {
   storyPointsField: string;
-  transitions: { inProgress: string; done: string };
+  transitions: { inProgress: string; paused: string; done: string };
 };
 
 /**
  * Resolve a config relevante ao plano de sync a partir do ambiente.
- * NÃO checa credenciais (preview deve funcionar offline) — `resolveJiraConfig`
+ * NÃO checa credenciais (preview funciona offline) — `resolveJiraConfig`
  * é quem exige BASE_URL/EMAIL/TOKEN, e só o caminho `--yes` precisa delas.
  */
 export function resolveTransitionConfig(env: NodeJS.ProcessEnv = process.env): TransitionConfig {
@@ -16,6 +16,7 @@ export function resolveTransitionConfig(env: NodeJS.ProcessEnv = process.env): T
     storyPointsField: env.JIRA_STORY_POINTS_FIELD ?? env.JIRA_STORY_POINTS_CUSTOM_FIELD ?? "customfield_10016",
     transitions: {
       inProgress: env.JIRA_TRANSITION_IN_PROGRESS ?? "In Progress",
+      paused: env.JIRA_TRANSITION_PAUSED ?? "Paused",
       done: env.JIRA_TRANSITION_DONE ?? "Done"
     }
   };
@@ -24,23 +25,31 @@ export function resolveTransitionConfig(env: NodeJS.ProcessEnv = process.env): T
 export type SyncAction = {
   external_id: string;
   jira_key: string;
-  transitions: string[];            // nomes de transição a aplicar, em ordem
-  set_story_points: number | null;  // SP a gravar via updateIssueFields, ou null
-  log_worklog_minutes: number | null; // worklog total a lançar (uma vez), ou null
-  comment: boolean;                 // postar comentário de conclusão?
-  last_event_id: string;            // para gravar no sync-state após projetar
-  status: IssueState["status"];     // idem
+  transition: { name: string; comment: string | null } | null;
+  set_story_points: number | null;
+  log_worklog_minutes: number;
+  new_commits: string[];
+  all_commits: string[];
+  comment: boolean;
+  last_event_id: string;
+  status: IssueState["status"];
+  worklog_total_minutes: number;
 };
 
 export type SyncPlan = {
   actions: SyncAction[];
-  unmapped: string[]; // external_ids sem jira_key — não dá para sincronizar
-  skipped: number;    // issues sem nada novo a projetar
+  unmapped: string[];
+  skipped: number;
 };
+
+function round1(value: number): number {
+  return Math.round(value * 10) / 10;
+}
 
 /**
  * Diff puro entre a projeção e o rastro de sincronização. Sem Jira, sem I/O.
- * Worklog/SP/comentário entram UMA vez, na conclusão, com gate em synced_status.
+ * Projeta: transição de status do workflow real; SP na conclusão; worklog
+ * incremental (delta); commits novos para o comentário de progresso.
  */
 export function computeSyncPlan(
   state: GovernanceState,
@@ -59,26 +68,40 @@ export function computeSyncPlan(
 
     const synced = syncState.issues[externalId];
     if (synced && synced.synced_event_id === issue.last_event_id) {
-      skipped++; // nada novo desde o último sync
+      skipped++;
       continue;
     }
 
-    // Marcos de status: created→In Progress na primeira atividade; →Done na
-    // conclusão. paused→in_progress (task.resumed) não gera transição — a
-    // issue permanece "In Progress" no board do Jira.
     const syncedStatus = synced?.synced_status ?? "created";
-    const transitions: string[] = [];
-    if (syncedStatus === "created" && issue.status !== "created") {
-      transitions.push(config.transitions.inProgress);
-    }
-    const completingNow = issue.status === "completed" && syncedStatus !== "completed";
-    if (completingNow) {
-      transitions.push(config.transitions.done);
+
+    // A governança dirige in_progress/paused/completed (não o status inicial
+    // "created"/"Tarefas pendentes", nem os de processo humano).
+    let transition: { name: string; comment: string | null } | null = null;
+    if (issue.status !== syncedStatus && issue.status !== "created") {
+      if (issue.status === "in_progress") {
+        transition = { name: config.transitions.inProgress, comment: null };
+      } else if (issue.status === "paused") {
+        transition = {
+          name: config.transitions.paused,
+          comment: issue.pause_reason ?? "Pausada via governança matilha."
+        };
+      } else if (issue.status === "completed") {
+        transition = { name: config.transitions.done, comment: null };
+      }
     }
 
-    if (transitions.length === 0) {
-      // completingNow sempre empurra `done` em transitions, então
-      // transitions vazio ⇒ nenhum marco novo a projetar.
+    const completingNow = issue.status === "completed" && syncedStatus !== "completed";
+    const setStoryPoints = completingNow ? issue.story_points : null;
+
+    const syncedWorklog = synced?.synced_worklog_minutes ?? 0;
+    const worklogDelta = round1(Math.max(0, issue.worklog_active_minutes - syncedWorklog));
+
+    const syncedCommits = synced?.synced_commits ?? [];
+    const newCommits = issue.commits.filter((c) => !syncedCommits.includes(c));
+
+    const comment = completingNow || newCommits.length > 0;
+
+    if (!transition && setStoryPoints === null && worklogDelta === 0 && !comment) {
       skipped++;
       continue;
     }
@@ -86,12 +109,15 @@ export function computeSyncPlan(
     actions.push({
       external_id: externalId,
       jira_key: issue.jira_key,
-      transitions,
-      set_story_points: completingNow ? issue.story_points : null,
-      log_worklog_minutes: completingNow ? issue.worklog_active_minutes : null,
-      comment: completingNow,
+      transition,
+      set_story_points: setStoryPoints,
+      log_worklog_minutes: worklogDelta,
+      new_commits: newCommits,
+      all_commits: issue.commits,
+      comment,
       last_event_id: issue.last_event_id,
-      status: issue.status
+      status: issue.status,
+      worklog_total_minutes: issue.worklog_active_minutes
     });
   }
 
