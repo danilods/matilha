@@ -24,7 +24,7 @@ export async function hooksRunPostCommitCommand(cwd: string): Promise<void> {
   try {
     const result = await runPostCommit(cwd);
     if (result.emitted.length > 0) {
-      console.log(pc.dim(`matilha: recorded task.completed for ${result.emitted.join(", ")}`));
+      console.log(pc.dim(`matilha: recorded task.progress for ${result.emitted.join(", ")}`));
     }
   } catch (err) {
     console.error(`matilha post-commit hook: ${err instanceof Error ? err.message : String(err)}`);
