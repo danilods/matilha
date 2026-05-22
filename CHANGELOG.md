@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.8.0] — 2026-05-21 — Workflow real do Jira + progresso de tasks longas
+
+A governança passa a refletir o workflow real do Jira e a suportar tasks longas — separando "houve um commit" de "a task terminou". Evolução E11 da spec de governança (`argos/docs/superpowers/specs/2026-05-19-argos-governanca-jira-design.md`, §6.3/§6.5/§6.7/§6.8).
+
+### Added
+
+- **Evento `task.progress`** (`src/governance/events.ts`) — registra os commits de uma task em andamento. Acumulado pela projeção (`src/governance/projection.ts`) sem tocar o worklog; a task permanece `in_progress`.
+- **`pause_reason` na projeção** — o motivo da última pausa (`task.paused`), enquanto a task está pausada — usado como o comentário que a transição "Paused" do Jira exige.
+- **`transitionIssue(key, name, opts?)`** (`src/jira/jiraClient.ts`) — `opts.comment` (ADF, em `update.comment`) e `opts.fields` no POST da transição, para satisfazer transições *gated*.
+- **`sync-state.json` rastreia `synced_worklog_minutes` e `synced_commits`** — base para o worklog incremental e para comentar só commits novos.
+- **`matilha governance sync` reescrito para o workflow real** — transições configuráveis (`JIRA_TRANSITION_IN_PROGRESS`/`_PAUSED`/`_DONE`); worklog projetado em **delta** (uma task longa sincronizada N vezes acumula uma trilha de worklogs); comentário de progresso a cada sync listando os commits novos.
+
+### Changed
+
+- **O hook post-commit emite `task.progress`, não mais `task.completed`** — um commit é progresso, não conclusão. A conclusão de uma task passa a vir **exclusivamente** do `matilha task done` explícito. Uma task longa permanece `in_progress` por quantos commits forem necessários.
+- **`matilha governance sync` grava Story Points antes de transicionar para "Concluído"** — corrige a ordem para a transição *gated* no campo Story Points; a transição "Paused" carrega o motivo da pausa como comentário.
+
 ## [1.7.0] — 2026-05-21 — Camada de governança issue-grained (Jira)
 
 Camada de governança event-sourced para desenvolvimento assistido por IA — rastro auditável de cada task: tempo ativo de agente, story point medido, modelo de IA. Construída como evolução aditiva (nada de 1.6.0 foi reescrito); o projeto Argos é o caso de prova. Spec: `argos/docs/superpowers/specs/2026-05-19-argos-governanca-jira-design.md`.
